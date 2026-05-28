@@ -44,7 +44,9 @@ export default function Dashboard() {
               ✨ Premium
             </span>
           )}
-          <span className="text-indigo-300 text-sm">{profile?.username}</span>
+          <Link to="/profile" className="text-indigo-300 text-sm hover:text-white transition">
+            {profile?.username}
+            </Link>
           <button
             onClick={handleLogout}
             className="text-indigo-400 hover:text-white transition"
