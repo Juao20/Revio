@@ -24,9 +24,9 @@ INSTALLED_APPS = [
     'cloudinary',
     'cloudinary_storage',
     # Local
-    'accounts',
-    'courses',
-    'study',
+    'apps.accounts',
+    'apps.courses',
+    'apps.study',
 ]
 
 MIDDLEWARE = [
@@ -82,18 +82,13 @@ REST_FRAMEWORK = {
 # CORS
 CORS_ALLOW_ALL_ORIGINS = True  # En dev seulement
 
-# Cloudinary
-import cloudinary
-cloudinary.config(
-    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
-    api_key=os.getenv('CLOUDINARY_API_KEY'),
-    api_secret=os.getenv('CLOUDINARY_API_SECRET'),
-)
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# Storage local (dev)
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 # Static & Media
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
