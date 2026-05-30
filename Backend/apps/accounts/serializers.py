@@ -25,6 +25,23 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    level = serializers.SerializerMethodField()
+    ai_questions_remaining = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'is_premium', 'daily_uploads_used']
+        fields = [
+            'id', 'username', 'email', 'is_premium',
+            'daily_uploads_used', 'daily_ai_questions_used',
+            'current_streak', 'longest_streak',
+            'xp', 'level', 'ai_questions_remaining'
+        ]
+
+    def get_level(self, obj):
+        return obj.level
+
+    def get_ai_questions_remaining(self, obj):
+        if obj.is_premium:
+            return -1  # illimité
+        used = obj.daily_ai_questions_used
+        return max(0, 7 - used)
