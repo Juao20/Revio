@@ -22,6 +22,8 @@ class User(AbstractUser):
     # XP + Niveau
     xp = models.IntegerField(default=0)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
         return self.email
 
@@ -85,3 +87,9 @@ class User(AbstractUser):
             return {'number': 3, 'name': 'Expert', 'next': 600}
         else:
             return {'number': 4, 'name': 'Master', 'next': None}
+    
+    @property
+    def ai_questions_remaining(self):
+        if self.is_premium:
+            return -1
+        return max(0, 7 - self.daily_ai_questions_used)

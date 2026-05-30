@@ -70,6 +70,11 @@ class GenerateStudyContentView(APIView):
             )
             quizzes.append(quiz)
 
+        course.summary = data.get('summary', [])
+        course.key_concepts = data.get('key_concepts', [])
+        course.estimated_mastery_time = data.get('estimated_mastery_time', '')
+        course.save()
+
         # XP pour génération
         record_activity(request.user, xp=5)
 
@@ -262,11 +267,13 @@ class AskProfessorView(APIView):
             return Response({'error': 'Cours introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
         question = request.data.get('question', '').strip()
+        history = request.data.get('history', [])  # historique conversation
+
         if not question:
             return Response({'error': 'Question manquante'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            answer = ask_professor(course.content, question)
+            answer = ask_professor(course.content, question, history)
             request.user.increment_ai_questions()
         except Exception as e:
             return Response({'error': f'Erreur IA : {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -275,7 +282,6 @@ class AskProfessorView(APIView):
             'answer': answer,
             'questions_remaining': request.user.ai_questions_remaining if not request.user.is_premium else -1
         })
-
 
 class RevisionPlanView(APIView):
     permission_classes = [IsAuthenticated]

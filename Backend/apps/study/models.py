@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils import timezone
+from django.utils.timezone import now as timezone_now
+import datetime
 from apps.courses.models import Course
 from django.conf import settings
 
@@ -9,13 +11,14 @@ class Flashcard(models.Model):
         ('medium', 'Moyen'),
         ('hard', 'Difficile'),
     ]
+    topic = models.CharField(max_length=100, blank=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='flashcards')
     question = models.TextField()
     answer = models.TextField()
     difficulty = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES, default='medium')
 
     # Révision espacée
-    next_review_date = models.DateField(default=timezone.now)
+    next_review_date = models.DateField(default=datetime.date.today)
     ease_factor = models.FloatField(default=2.5)
     interval = models.IntegerField(default=1)  # en jours
     review_count = models.IntegerField(default=0)
