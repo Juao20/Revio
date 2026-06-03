@@ -4,7 +4,7 @@ import json
 
 client = Groq(api_key=os.getenv('GROQ_API_KEY'))
 
-SYSTEM_PROMPT = """Tu es StudyBuddy, un assistant pédagogique expert.
+SYSTEM_PROMPT = """Tu es Revio, un assistant pédagogique expert.
 Tu réponds TOUJOURS en JSON valide et rien d'autre.
 Pas de texte avant ou après le JSON. Pas de balises markdown.
 """

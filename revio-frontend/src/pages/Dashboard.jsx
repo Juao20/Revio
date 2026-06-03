@@ -76,7 +76,7 @@ export default function Dashboard() {
       <nav className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🎓</span>
-          <span className="text-white font-bold text-xl">StudyBuddy</span>
+          <span className="text-white font-bold text-xl">Revio</span>
         </div>
         <div className="flex items-center gap-4">
           {profile?.is_premium && (
