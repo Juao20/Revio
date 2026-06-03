@@ -5,12 +5,14 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.db.models import Avg, Count, Q
 from apps.courses.models import Course
-from .models import Flashcard, Quiz, QuizAnswer, StudySession, RevisionPlan, StudyActivity
+from .models import Flashcard, Quiz, QuizAnswer, StudySession, RevisionPlan, StudyActivity, ExamSession
 from .serializers import (
     FlashcardSerializer, QuizSerializer, QuizAnswerSerializer,
-    StudySessionSerializer, RevisionPlanSerializer, StudyActivitySerializer
+    StudySessionSerializer, RevisionPlanSerializer, StudyActivitySerializer,
+    ExamSessionSerializer
 )
-from .ai_service import generate_study_content, ask_professor, generate_revision_plan
+import random
+from .ai_service import generate_study_content, ask_professor, generate_revision_plan, generate_exam_questions
 
 
 def record_activity(user, xp=0):
@@ -70,9 +72,15 @@ class GenerateStudyContentView(APIView):
             )
             quizzes.append(quiz)
 
+        # Dans GenerateStudyContentView.post(), après avoir sauvegardé flashcards et quizzes :
+        concepts_data = data.get('concepts_data', {})
         course.summary = data.get('summary', [])
         course.key_concepts = data.get('key_concepts', [])
         course.estimated_mastery_time = data.get('estimated_mastery_time', '')
+        course.concept_count = concepts_data.get('concept_count', 0)
+        course.course_difficulty = concepts_data.get('difficulty', '')
+        course.estimated_study_time_minutes = concepts_data.get('estimated_study_time_minutes', 0)
+        course.course_type = concepts_data.get('course_type', '')
         course.save()
 
         # XP pour génération
@@ -346,3 +354,159 @@ class DueFlashcardsCountView(APIView):
             next_review_date__lte=today
         ).count()
         return Response({'due_count': count})
+
+EXAM_CONFIG = {
+    'easy':   {'minutes': 10},
+    'medium': {'minutes': 20},
+    'hard':   {'minutes': 30},
+    'final':  {'minutes': 60},
+}
+
+class ExamStartView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, course_id):
+        if not request.user.is_premium:
+            return Response(
+                {'error': 'Le mode examen est une fonctionnalité Premium'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            course = Course.objects.get(pk=course_id, user=request.user)
+        except Course.DoesNotExist:
+            return Response({'error': 'Cours introuvable'}, status=status.HTTP_404_NOT_FOUND)
+
+        difficulty = request.data.get('difficulty', 'medium')
+        if difficulty not in EXAM_CONFIG:
+            return Response({'error': 'Difficulté invalide'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Vérifier que l'examen final est débloqué
+        if difficulty == 'final' and not course.exam_unlocked:
+            return Response({
+                'error': f'L\'examen final se débloque à 75% de maîtrise. Ta maîtrise actuelle : {course.mastery_score}%'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        if not course.content:
+            return Response({'error': 'Ce cours n\'a pas de contenu'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Générer des questions FRAÎCHES via l'IA
+            exam_data = generate_exam_questions(course.content, difficulty, course.title)
+        except Exception as e:
+            return Response({'error': f'Erreur IA : {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        questions = exam_data.get('questions', [])
+        duration_minutes = exam_data.get('duration_minutes', EXAM_CONFIG[difficulty]['minutes'])
+
+        # Créer la session d'examen
+        exam = ExamSession.objects.create(
+            user=request.user,
+            course=course,
+            difficulty=difficulty,
+            total_questions=len(questions),
+            duration_seconds=duration_minutes * 60,
+        )
+
+        return Response({
+            'exam_id': exam.id,
+            'difficulty': difficulty,
+            'total_questions': len(questions),
+            'duration_seconds': duration_minutes * 60,
+            'questions': questions,
+        }, status=status.HTTP_201_CREATED)
+
+
+class ExamSubmitView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, course_id, exam_id):
+        try:
+            exam = ExamSession.objects.get(
+                pk=exam_id,
+                user=request.user,
+                course__id=course_id
+            )
+        except ExamSession.DoesNotExist:
+            return Response({'error': 'Examen introuvable'}, status=status.HTTP_404_NOT_FOUND)
+
+        if exam.completed:
+            return Response({'error': 'Examen déjà soumis'}, status=status.HTTP_400_BAD_REQUEST)
+
+        answers = request.data.get('answers', [])
+        time_used = request.data.get('time_used_seconds', 0)
+
+        score = 0
+        detailed_answers = []
+
+        for answer in answers:
+            selected = answer.get('selected_answer', '')
+            correct = answer.get('correct_answer', '')
+            is_correct = selected == correct and selected != ''
+
+            if is_correct:
+                score += 1
+
+            detailed_answers.append({
+                'question': answer.get('question', ''),
+                'selected_answer': selected,
+                'correct_answer': correct,
+                'explanation': answer.get('explanation', ''),
+                'topic': answer.get('topic', ''),
+                'difficulty': answer.get('difficulty', ''),
+                'is_correct': is_correct,
+            })
+
+        # Mettre à jour l'examen
+        exam.score = score
+        exam.time_used_seconds = time_used
+        exam.answers = detailed_answers
+        exam.completed = True
+        exam.save()
+
+        # Sauvegarder comme session pour mettre à jour la maîtrise
+        session = StudySession.objects.create(
+            user=request.user,
+            course=exam.course,
+            score=score,
+            total_questions=exam.total_questions,
+            duration=time_used,
+        )
+
+        # Mettre à jour la maîtrise du cours
+        exam.course.update_mastery()
+
+        # XP selon score
+        percentage = round((score / exam.total_questions) * 100) if exam.total_questions > 0 else 0
+        xp = 100 if percentage >= 80 else 60 if percentage >= 50 else 20
+        record_activity(request.user, xp=xp)
+
+        return Response({
+            'exam_id': exam.id,
+            'score': score,
+            'total_questions': exam.total_questions,
+            'percentage': percentage,
+            'time_used_seconds': time_used,
+            'duration_seconds': exam.duration_seconds,
+            'xp_earned': xp,
+            'new_mastery': exam.course.mastery_score,
+            'exam_unlocked': exam.course.exam_unlocked,
+            'detailed_answers': detailed_answers,
+        })
+
+class ExamHistoryView(APIView):
+    """Historique des examens — Premium"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, course_id):
+        if not request.user.is_premium:
+            return Response(
+                {'error': 'Fonctionnalité Premium'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        exams = ExamSession.objects.filter(
+            user=request.user,
+            course__id=course_id,
+            completed=True
+        )
+        return Response(ExamSessionSerializer(exams, many=True).data)

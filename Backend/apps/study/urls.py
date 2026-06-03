@@ -11,6 +11,9 @@ from .views import (
     RevisionPlanView,
     HeatmapView,
     DueFlashcardsCountView,
+    ExamStartView,
+    ExamSubmitView,
+    ExamHistoryView,
 )
 
 urlpatterns = [
@@ -22,6 +25,9 @@ urlpatterns = [
     path('<int:course_id>/weak-points/', WeakPointsView.as_view(), name='weak-points'),
     path('<int:course_id>/professor/', AskProfessorView.as_view(), name='ask-professor'),
     path('<int:course_id>/revision-plan/', RevisionPlanView.as_view(), name='revision-plan'),
+    path('<int:course_id>/exam/start/', ExamStartView.as_view(), name='exam-start'),
+    path('<int:course_id>/exam/<int:exam_id>/submit/', ExamSubmitView.as_view(), name='exam-submit'),
+    path('<int:course_id>/exam/history/', ExamHistoryView.as_view(), name='exam-history'),
     path('sessions/', StudySessionView.as_view(), name='study-sessions'),
     path('heatmap/', HeatmapView.as_view(), name='heatmap'),
     path('due-flashcards/', DueFlashcardsCountView.as_view(), name='due-flashcards'),

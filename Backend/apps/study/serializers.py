@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Flashcard, Quiz, QuizAnswer, StudySession, RevisionPlan, StudyActivity
+from .models import Flashcard, Quiz, QuizAnswer, StudySession, RevisionPlan, StudyActivity, ExamSession
 from django.utils import timezone
 
 class FlashcardSerializer(serializers.ModelSerializer):
@@ -48,3 +48,20 @@ class StudyActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = StudyActivity
         fields = ['date', 'sessions_count', 'xp_earned']
+
+class ExamSessionSerializer(serializers.ModelSerializer):
+    percentage = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ExamSession
+        fields = [
+            'id', 'course', 'difficulty', 'score', 'total_questions',
+            'duration_seconds', 'time_used_seconds', 'answers',
+            'completed', 'created_at', 'percentage'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+    def get_percentage(self, obj):
+        if obj.total_questions == 0:
+            return 0
+        return round((obj.score / obj.total_questions) * 100)

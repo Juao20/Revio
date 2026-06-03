@@ -109,3 +109,28 @@ class StudyActivity(models.Model):
 
     def __str__(self):
         return f"Activity — {self.user.username} — {self.date}"
+    
+class ExamSession(models.Model):
+    DIFFICULTY_CHOICES = [
+        ('easy', 'Facile'),
+        ('medium', 'Moyen'),
+        ('hard', 'Difficile'),
+        ('final', 'Examen Final'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='exam_sessions')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='exam_sessions')
+    difficulty = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES, default='medium')
+    score = models.IntegerField(default=0)
+    total_questions = models.IntegerField(default=0)
+    duration_seconds = models.IntegerField(default=0)  # temps alloué
+    time_used_seconds = models.IntegerField(default=0)  # temps réellement utilisé
+    answers = models.JSONField(default=list)  # toutes les réponses
+    completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Exam — {self.user.username} — {self.course.title} — {self.difficulty}"
+
+    class Meta:
+        ordering = ['-created_at']

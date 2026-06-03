@@ -10,26 +10,94 @@ Pas de texte avant ou après le JSON. Pas de balises markdown.
 """
 
 def analyze_course(content: str) -> dict:
-    """Analyse la taille et complexité du cours pour adapter la génération"""
+    """Analyse le cours et détecte les concepts"""
     word_count = len(content.split())
-    
+
     if word_count < 300:
-        return {'size': 'small', 'flashcards': 5, 'quiz': 3, 'summary_points': 3}
+        size = 'small'
+        flashcards = (15, 25)
+        quiz = (5, 10)
     elif word_count < 800:
-        return {'size': 'medium', 'flashcards': 10, 'quiz': 5, 'summary_points': 5}
+        size = 'medium'
+        flashcards = (25, 50)
+        quiz = (10, 15)
     elif word_count < 2000:
-        return {'size': 'large', 'flashcards': 15, 'quiz': 8, 'summary_points': 7}
+        size = 'large'
+        flashcards = (50, 80)
+        quiz = (15, 25)
     else:
-        return {'size': 'xlarge', 'flashcards': 20, 'quiz': 10, 'summary_points': 10}
+        size = 'xlarge'
+        flashcards = (80, 120)
+        quiz = (25, 30)
+
+    return {
+        'size': size,
+        'word_count': word_count,
+        'flashcards_range': flashcards,
+        'quiz_range': quiz,
+    }
+
+
+def detect_concepts(content: str) -> dict:
+    """Détecte les concepts clés du cours avant de générer le contenu"""
+    prompt = f"""
+Analyse ce cours et retourne ce JSON :
+{{
+  "concepts": ["concept 1", "concept 2", ...],
+  "concept_count": 12,
+  "difficulty": "easy|medium|hard",
+  "estimated_study_time_minutes": 90,
+  "course_type": "sciences|histoire|langues|maths|autre"
+}}
+
+Règles :
+- Liste TOUS les concepts importants du cours
+- concept_count = nombre exact de concepts détectés
+- difficulty = difficulté globale du cours
+- estimated_study_time_minutes = temps réaliste pour maîtriser ce cours
+
+Cours :
+{content[:4000]}
+"""
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.3,
+        max_tokens=2000,
+    )
+    raw = response.choices[0].message.content.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+    return json.loads(raw.strip())
 
 
 def generate_study_content(content: str, is_premium: bool) -> dict:
     analysis = analyze_course(content)
 
+    # Détecter les concepts d'abord
+    concepts_data = detect_concepts(content)
+    concept_count = concepts_data.get('concept_count', 10)
+
+    # Calculer les quantités selon les concepts
+    raw_flashcards = min(concept_count * 3, 120)
+    raw_quiz = min(concept_count // 2, 30)
+
+    # Borner dans les ranges selon la taille
+    fc_min, fc_max = analysis['flashcards_range']
+    qz_min, qz_max = analysis['quiz_range']
+
+    flashcard_count = max(fc_min, min(raw_flashcards, fc_max))
+    quiz_count = max(qz_min, min(raw_quiz, qz_max))
+
     # Limiter pour les gratuits
-    flashcard_count = analysis['flashcards'] if is_premium else min(analysis['flashcards'], 5)
-    quiz_count = analysis['quiz'] if is_premium else min(analysis['quiz'], 3)
-    summary_points = analysis['summary_points']
+    if not is_premium:
+        flashcard_count = min(flashcard_count, 5)
+        quiz_count = min(quiz_count, 3)
 
     prompt = f"""
 Tu es un professeur expert. Analyse ce cours en profondeur et génère ce JSON :
@@ -39,7 +107,8 @@ Tu es un professeur expert. Analyse ce cours en profondeur et génère ce JSON :
       "question": "...",
       "answer": "...",
       "difficulty": "easy|medium|hard",
-      "topic": "nom du thème/chapitre"
+      "topic": "nom du concept/thème",
+      "type": "definition|exemple|application|piege|formule"
     }}
   ],
   "quiz": [
@@ -48,30 +117,32 @@ Tu es un professeur expert. Analyse ce cours en profondeur et génère ce JSON :
       "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
       "correct_answer": "A. ...",
       "explanation": "...",
-      "topic": "nom du thème/chapitre"
+      "topic": "nom du concept/thème",
+      "difficulty": "easy|medium|hard",
+      "level": "fondamentaux|comprehension|application|pieges"
     }}
   ],
   "summary": [
     {{
       "title": "Titre de la partie",
-      "content": "Explication claire et complète de cette partie en 2-3 phrases"
+      "content": "Explication claire et complète en 2-3 phrases"
     }}
   ],
   "key_concepts": ["concept 1", "concept 2", "concept 3"],
-  "estimated_mastery_time": "2h30"
+  "estimated_mastery_time": "2h30",
+  "concept_count": {concept_count}
 }}
 
 Règles IMPORTANTES :
-- Génère exactement {flashcard_count} flashcards couvrant TOUTES les parties du cours
-- Génère exactement {quiz_count} questions de quiz variées
-- Le résumé doit avoir exactement {summary_points} parties qui couvrent INTELLIGEMMENT l'ensemble du cours
-- Chaque partie du résumé doit avoir un titre clair et un contenu substantiel
-- Les flashcards et quiz doivent couvrir proportionnellement toutes les parties du cours
+- Génère exactement {flashcard_count} flashcards couvrant TOUS les concepts
+- Types de flashcards variés : définition, exemple, application, piège, formule
+- Génère exactement {quiz_count} questions de quiz
+- Répartis les quiz en 4 niveaux : fondamentaux, comprehension, application, pieges
 - Varie les difficultés : 40% easy, 40% medium, 20% hard
-- Le champ "topic" doit correspondre aux vraies parties du cours
-- estimated_mastery_time = temps estimé pour maîtriser ce cours
+- Le résumé doit couvrir intelligemment TOUTES les parties du cours
+- Chaque concept important doit avoir au moins une flashcard
 
-Voici le cours ({len(content.split())} mots) :
+Cours ({analysis['word_count']} mots, {concept_count} concepts) :
 {content[:6000]}
 """
 
@@ -82,7 +153,7 @@ Voici le cours ({len(content.split())} mots) :
             {"role": "user", "content": prompt}
         ],
         temperature=0.7,
-        max_tokens=6000,
+        max_tokens=8000,
     )
 
     raw = response.choices[0].message.content.strip()
@@ -90,30 +161,96 @@ Voici le cours ({len(content.split())} mots) :
         raw = raw.split("```")[1]
         if raw.startswith("json"):
             raw = raw[4:]
-    raw = raw.strip()
 
-    return json.loads(raw)
+    data = json.loads(raw.strip())
+    data['concepts_data'] = concepts_data
+    return data
+
+
+def generate_exam_questions(content: str, difficulty: str, course_title: str) -> list:
+    """
+    Génère des questions d'examen FRAÎCHES — différentes des quiz de révision.
+    Basé sur la difficulté choisie.
+    """
+    EXAM_CONFIG = {
+        'easy':   {'count': 10, 'easy_pct': 80, 'medium_pct': 20, 'hard_pct': 0,  'minutes': 10},
+        'medium': {'count': 20, 'easy_pct': 50, 'medium_pct': 40, 'hard_pct': 10, 'minutes': 20},
+        'hard':   {'count': 30, 'easy_pct': 20, 'medium_pct': 50, 'hard_pct': 30, 'minutes': 30},
+        'final':  {'count': 40, 'easy_pct': 20, 'medium_pct': 40, 'hard_pct': 40, 'minutes': 60},
+    }
+
+    config = EXAM_CONFIG.get(difficulty, EXAM_CONFIG['medium'])
+
+    easy_count = round(config['count'] * config['easy_pct'] / 100)
+    medium_count = round(config['count'] * config['medium_pct'] / 100)
+    hard_count = config['count'] - easy_count - medium_count
+
+    prompt = f"""
+Tu es un examinateur expert pour le cours : "{course_title}".
+
+Génère exactement {config['count']} questions d'examen NOUVELLES (pas les mêmes que les quiz de révision) en JSON :
+{{
+  "questions": [
+    {{
+      "question": "...",
+      "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+      "correct_answer": "A. ...",
+      "explanation": "...",
+      "topic": "...",
+      "difficulty": "easy|medium|hard"
+    }}
+  ],
+  "duration_minutes": {config['minutes']}
+}}
+
+Répartition OBLIGATOIRE :
+- {easy_count} questions faciles (concepts de base, définitions)
+- {medium_count} questions moyennes (compréhension, application)
+- {hard_count} questions difficiles (analyse, pièges, cas complexes)
+
+Règles :
+- Questions DIFFÉRENTES et plus poussées que les quiz de révision
+- Couvre TOUS les aspects importants du cours
+- Inclus des pièges et cas limites pour les questions difficiles
+- Chaque question doit avoir une explication détaillée
+
+Contenu du cours :
+{content[:5000]}
+"""
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.8,
+        max_tokens=8000,
+    )
+
+    raw = response.choices[0].message.content.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+
+    data = json.loads(raw.strip())
+    return data
 
 
 def ask_professor(content: str, question: str, history: list = []) -> str:
-    """Le prof IA — mode chat avec historique"""
     messages = [
         {
             "role": "system",
             "content": f"""Tu es un professeur bienveillant et pédagogue.
 Tu réponds aux questions sur ce cours de façon claire, concise et avec des exemples si nécessaire.
-Tu gardes en mémoire l'historique de la conversation.
 
 Voici le cours :
 {content[:3000]}"""
         }
     ]
-
-    # Ajouter l'historique
     for msg in history:
         messages.append(msg)
-
-    # Ajouter la nouvelle question
     messages.append({"role": "user", "content": question})
 
     response = client.chat.completions.create(
@@ -164,6 +301,4 @@ Contenu du cours :
         raw = raw.split("```")[1]
         if raw.startswith("json"):
             raw = raw[4:]
-    raw = raw.strip()
-
-    return json.loads(raw)
+    return json.loads(raw.strip())

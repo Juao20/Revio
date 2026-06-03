@@ -14,6 +14,7 @@ import Quiz from './pages/study/Quiz'
 import RevisionPlan from './pages/study/RevisionPlan'
 import Profile from './pages/Profile'
 import Premium from './pages/Premium'
+import Exam from './pages/study/Exam'
 
 const PrivateRoute = ({ children }) => {
   const token = useAuthStore((s) => s.token)
@@ -50,6 +51,7 @@ export default function App() {
       <Route path="/courses/:id" element={<PrivateRoute><CourseDetail /></PrivateRoute>} />
       <Route path="/courses/:id/quiz" element={<PrivateRoute><Quiz /></PrivateRoute>} />
       <Route path="/courses/:id/plan" element={<PrivateRoute><RevisionPlan /></PrivateRoute>} />
+      <Route path="/courses/:id/exam" element={<PrivateRoute><Exam /></PrivateRoute>} />
     </Routes>
   )
 }

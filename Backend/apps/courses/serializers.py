@@ -2,9 +2,18 @@ from rest_framework import serializers
 from .models import Course
 
 class CourseSerializer(serializers.ModelSerializer):
+    mastery_label = serializers.ReadOnlyField()
+    exam_unlocked = serializers.ReadOnlyField()
+
     class Meta:
         model = Course
-        fields = ['id', 'title', 'content', 'file', 'summary', 'key_concepts', 'estimated_mastery_time', 'created_at']
+        fields = [
+            'id', 'title', 'content', 'file',
+            'summary', 'key_concepts', 'estimated_mastery_time',
+            'concept_count', 'course_difficulty', 'estimated_study_time_minutes',
+            'course_type', 'mastery_score', 'mastery_label', 'exam_unlocked',
+            'created_at'
+        ]
         read_only_fields = ['id', 'created_at']
 
 

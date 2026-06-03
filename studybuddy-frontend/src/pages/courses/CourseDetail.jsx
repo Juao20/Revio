@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getCourse, deleteCourse } from '../../api/courses'
 import { generateContent, getFlashcards, getQuizzes, reviewFlashcard, getWeakPoints, askProfessor } from '../../api/study'
-import { ArrowLeft, Zap, Brain, Trash2, Calendar, MessageCircle, Send, Clock, Target } from 'lucide-react'
+import { ArrowLeft, Zap, Brain, Trash2, Calendar, MessageCircle, Send, Clock, Target, Trophy } from 'lucide-react'
 import useAuthStore from '../../stores/authStore'
 
 const difficultyColor = {
@@ -141,9 +141,29 @@ export default function CourseDetail() {
       </nav>
 
       <div className="max-w-3xl mx-auto px-6 py-8">
-
+        {/* Maîtrise du cours */}
+        {course?.mastery_score > 0 && (
+          <div className="bg-white/10 border border-white/20 rounded-2xl p-4 mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-indigo-300 text-sm">Maîtrise du cours</span>
+              <span className="text-white font-bold">{course.mastery_score}%</span>
+            </div>
+            <div className="w-full bg-white/10 rounded-full h-2 mb-1">
+              <div
+                className={`h-2 rounded-full transition-all ${
+                  course.mastery_score >= 85 ? 'bg-emerald-500'
+                  : course.mastery_score >= 70 ? 'bg-blue-500'
+                  : course.mastery_score >= 50 ? 'bg-yellow-500'
+                  : 'bg-red-500'
+                }`}
+                style={{ width: `${course.mastery_score}%` }}
+              />
+            </div>
+            <p className="text-indigo-400 text-xs">{course.mastery_label}</p>
+          </div>
+        )}
         {/* Actions */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
           <button
             onClick={() => generateMutation.mutate()}
             disabled={generateMutation.isPending}
@@ -170,8 +190,28 @@ export default function CourseDetail() {
             <Calendar size={20} />
             <span className="text-xs font-medium">Plan révision</span>
           </Link>
-        </div>
 
+          {user?.is_premium ? (
+            <Link
+              to={`/courses/${id}/exam`}
+              className="flex flex-col items-center gap-2 bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30 text-yellow-300 rounded-2xl py-4 transition"
+            >
+              <Trophy size={20} />
+              <span className="text-xs font-medium">Examen</span>
+              {course?.exam_unlocked && (
+                <span className="text-xs text-yellow-400">Final 🔓</span>
+              )}
+            </Link>
+          ) : (
+            <Link
+              to="/premium"
+              className="flex flex-col items-center gap-2 bg-white/5 border border-white/10 text-indigo-400 rounded-2xl py-4 transition hover:bg-white/10"
+            >
+              <Trophy size={20} />
+              <span className="text-xs font-medium">Examen 🔒</span>
+            </Link>
+          )}
+        </div>
         {/* Temps de maîtrise estimé */}
         {generatedData?.estimated_mastery_time && (
           <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-5 py-3 mb-6 flex items-center gap-3">
