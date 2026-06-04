@@ -15,6 +15,9 @@ import RevisionPlan from './pages/study/RevisionPlan'
 import Profile from './pages/Profile'
 import Premium from './pages/Premium'
 import Exam from './pages/study/Exam'
+import Terms from './pages/Terms'
+import Privacy from './pages/Privacy'
+import PremiumSuccess from './pages/PremiumSuccess'
 
 const PrivateRoute = ({ children }) => {
   const token = useAuthStore((s) => s.token)
@@ -42,6 +45,9 @@ export default function App() {
       {/* Public */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/premium/success" element={<PrivateRoute><PremiumSuccess /></PrivateRoute>} />
 
       {/* Private */}
       <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />

@@ -7,11 +7,16 @@ export default function Register() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((s) => s.setAuth)
   const [form, setForm] = useState({ username: '', email: '', password: '' })
+  const [accepted, setAccepted] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!accepted) {
+      setError('Tu dois accepter les conditions d\'utilisation pour continuer.')
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -34,7 +39,7 @@ export default function Register() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-violet-500 rounded-2xl mb-4 shadow-lg shadow-violet-500/30">
             <span className="text-2xl">🎓</span>
           </div>
-          <h1 className="text-3xl font-bold text-white">Revio</h1>
+          <h1 className="text-3xl font-bold text-white">StudyBuddy</h1>
           <p className="text-indigo-300 mt-1">Ton coach de révision IA</p>
         </div>
 
@@ -57,7 +62,7 @@ export default function Register() {
                 type="text"
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
-                className="w-full bg-white/10 border border-white/20 text-white placeholder-indigo-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
+                className="w-full bg-white/10 border border-white/20 text-white placeholder-indigo-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
                 placeholder="ton_username"
                 required
               />
@@ -71,7 +76,7 @@ export default function Register() {
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="w-full bg-white/10 border border-white/20 text-white placeholder-indigo-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
+                className="w-full bg-white/10 border border-white/20 text-white placeholder-indigo-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
                 placeholder="toi@email.com"
                 required
               />
@@ -85,16 +90,45 @@ export default function Register() {
                 type="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="w-full bg-white/10 border border-white/20 text-white placeholder-indigo-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
+                className="w-full bg-white/10 border border-white/20 text-white placeholder-indigo-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
                 placeholder="••••••••"
                 required
               />
             </div>
 
+            {/* Checkbox acceptation */}
+            <div className="flex items-start gap-3 pt-1">
+              <input
+                type="checkbox"
+                id="accept"
+                checked={accepted}
+                onChange={(e) => setAccepted(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-violet-500 cursor-pointer shrink-0"
+              />
+              <label htmlFor="accept" className="text-indigo-300 text-sm cursor-pointer leading-relaxed">
+                J'accepte les{' '}
+                <Link
+                  to="/terms"
+                  className="text-violet-400 hover:text-violet-300 underline"
+                  target="_blank"
+                >
+                  conditions d'utilisation
+                </Link>
+                {' '}et la{' '}
+                <Link
+                  to="/privacy"
+                  className="text-violet-400 hover:text-violet-300 underline"
+                  target="_blank"
+                >
+                  politique de confidentialité
+                </Link>
+              </label>
+            </div>
+
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-semibold rounded-xl py-3 transition shadow-lg shadow-violet-500/30"
+              disabled={loading || !accepted}
+              className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-3 transition shadow-lg shadow-violet-500/30"
             >
               {loading ? 'Inscription...' : 'Créer mon compte'}
             </button>
