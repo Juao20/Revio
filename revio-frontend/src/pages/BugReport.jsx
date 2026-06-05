@@ -28,11 +28,15 @@ export default function BugReport() {
     setLoading(true)
 
     try {
+      const token = useAuthStore.getState().token
+      console.log('Token:', token)
+      console.log('Form data:', formData)
+
       const response = await fetch('/api/accounts/bugs/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${useAuthStore.getState().token}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           title: formData.title,
@@ -42,11 +46,17 @@ export default function BugReport() {
         }),
       })
 
+      console.log('Response status:', response.status)
+      const responseData = await response.json()
+      console.log('Response data:', responseData)
+
       if (response.ok) {
         setSubmitted(true)
         setTimeout(() => {
           navigate('/')
         }, 2000)
+      } else {
+        alert(`Erreur ${response.status}: ${responseData.detail || JSON.stringify(responseData)}`)
       }
     } catch (error) {
       console.error('Erreur lors de l\'envoi du bug report:', error)
