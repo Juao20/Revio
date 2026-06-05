@@ -10,6 +10,10 @@ class User(AbstractUser):
     daily_uploads_used = models.IntegerField(default=0)
     last_upload_date = models.DateField(null=True, blank=True)
 
+    # Photos
+    daily_photos_used = models.IntegerField(default=0)
+    last_photo_date = models.DateField(null=True, blank=True)
+
     # Prof IA
     daily_ai_questions_used = models.IntegerField(default=0)
     last_ai_question_date = models.DateField(null=True, blank=True)
@@ -26,6 +30,26 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+    
+    # Photos
+
+    def can_upload_photo(self):
+        today = timezone.now().date()
+        if self.last_photo_date != today:
+            self.daily_photos_used = 0
+            self.last_photo_date = today
+            self.save()
+        if not self.is_premium:
+            return self.daily_photos_used < 1  # 1 photo/jour gratuit
+        return True  # illimité en premium
+
+    def increment_photo_upload(self):
+        today = timezone.now().date()
+        if self.last_photo_date != today:
+            self.daily_photos_used = 0
+            self.last_photo_date = today
+        self.daily_photos_used += 1
+        self.save()
 
     # --- Uploads ---
     def can_upload(self):

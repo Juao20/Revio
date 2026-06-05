@@ -33,6 +33,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'is_premium',
             'daily_uploads_used', 'daily_ai_questions_used',
+            'daily_photos_used',
             'current_streak', 'longest_streak',
             'xp', 'level', 'ai_questions_remaining'
         ]

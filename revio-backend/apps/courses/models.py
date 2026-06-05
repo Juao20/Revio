@@ -18,6 +18,9 @@ class Course(models.Model):
     estimated_study_time_minutes = models.IntegerField(default=0)
     course_type = models.CharField(max_length=50, blank=True)
 
+    # Photos
+    photos_count = models.IntegerField(default=0)
+
     # Maîtrise
     mastery_score = models.FloatField(default=0.0)  # 0 à 100
 
