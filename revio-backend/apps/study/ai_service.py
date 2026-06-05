@@ -1,6 +1,7 @@
 from groq import Groq
 import os
 import json
+import base64
 
 client = Groq(api_key=os.getenv('GROQ_API_KEY'))
 
@@ -302,3 +303,34 @@ Contenu du cours :
         if raw.startswith("json"):
             raw = raw[4:]
     return json.loads(raw.strip())
+
+def extract_text_from_image(image_data: bytes, media_type: str) -> str:
+    """Extrait le texte d'une photo de cours via Groq Vision"""
+    base64_image = base64.b64encode(image_data).decode('utf-8')
+
+    response = client.chat.completions.create(
+        model="meta-llama/llama-4-scout-17b-16e-instruct",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{media_type};base64,{base64_image}"
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "text": """Tu es un expert en extraction de texte de documents.
+Extrait TOUT le texte visible sur cette image de cours de manière fidèle et structurée.
+Conserve la structure du document : titres, sous-titres, paragraphes, listes, formules.
+Si c'est flou ou illisible, indique-le clairement.
+Réponds uniquement avec le texte extrait, sans commentaire."""
+                    }
+                ]
+            }
+        ],
+        max_tokens=4000,
+    )
+    return response.choices[0].message.content.strip()

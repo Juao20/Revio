@@ -5,8 +5,11 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from .models import Course
 from .serializers import CourseSerializer, CourseUploadSerializer
+from apps.study.ai_service import extract_text_from_image
 import PyPDF2
 import io
+
+ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
 class CourseListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -23,7 +26,6 @@ class CourseUploadView(APIView):
     def post(self, request):
         user = request.user
 
-        # Vérifier la limite d'upload journalière
         if not user.can_upload():
             return Response(
                 {'error': 'Limite journalière atteinte (2 uploads/jour). Passe en Premium !'},
@@ -36,17 +38,53 @@ class CourseUploadView(APIView):
 
         content = serializer.validated_data.get('content', '')
         file = serializer.validated_data.get('file', None)
+        upload_type = request.data.get('upload_type', 'text')  # text | pdf | image
 
-        # Extraire le texte du PDF si fichier fourni
-        if file and not content:
+        # Extraction selon le type
+        if upload_type == 'pdf' and file and not content:
             try:
                 pdf_reader = PyPDF2.PdfReader(io.BytesIO(file.read()))
                 content = ''
                 for page in pdf_reader.pages:
                     content += page.extract_text() or ''
+                if not content.strip():
+                    return Response(
+                        {'error': 'Impossible d\'extraire le texte de ce PDF.'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
             except Exception as e:
                 return Response(
                     {'error': f'Erreur lecture PDF : {str(e)}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        elif upload_type == 'image' and file and not content:
+            # Vérifier le type MIME
+            file_content_type = file.content_type
+            if file_content_type not in ALLOWED_IMAGE_TYPES:
+                return Response(
+                    {'error': 'Format non supporté. Utilise JPG, PNG ou WEBP.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Vérifier la taille (max 10MB)
+            if file.size > 10 * 1024 * 1024:
+                return Response(
+                    {'error': 'Image trop lourde. Maximum 10MB.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            try:
+                image_data = file.read()
+                content = extract_text_from_image(image_data, file_content_type)
+                if not content.strip():
+                    return Response(
+                        {'error': 'Impossible d\'extraire le texte de cette image. Vérifie la qualité de la photo.'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            except Exception as e:
+                return Response(
+                    {'error': f'Erreur analyse image : {str(e)}'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -55,10 +93,10 @@ class CourseUploadView(APIView):
             user=user,
             title=serializer.validated_data['title'],
             content=content,
-            file=file
+            file=file if upload_type == 'pdf' else None
         )
 
-        # Mettre à jour le compteur d'uploads
+        # Mettre à jour le compteur
         today = timezone.now().date()
         if user.last_upload_date != today:
             user.daily_uploads_used = 0
