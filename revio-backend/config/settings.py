@@ -96,6 +96,12 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_ALL_ORIGINS = False
 
+# CSRF en production
+CSRF_TRUSTED_ORIGINS = [
+    os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000'),
+    'https://revio.up.railway.app',
+]
+
 # Storage local (dev)
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
