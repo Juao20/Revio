@@ -2,15 +2,17 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { uploadCourse } from '../api/courses'
 import { ArrowLeft, FileText, Upload as UploadIcon, Camera, AlertTriangle } from 'lucide-react'
+import useAuthStore from '../stores/authStore'
 
 const MODES = [
-  { key: 'text',  label: 'Texte',    icon: FileText,     desc: 'Copier-coller ton cours' },
-  { key: 'pdf',   label: 'PDF',      icon: UploadIcon,   desc: 'Upload un fichier PDF' },
-  { key: 'image', label: 'Photo',    icon: Camera,       desc: 'Photo de tes notes' },
+  { key: 'text',  label: 'Texte',  icon: FileText,   desc: 'Copier-coller ton cours' },
+  { key: 'pdf',   label: 'PDF',    icon: UploadIcon, desc: 'Upload un fichier PDF' },
+  { key: 'image', label: 'Photo',  icon: Camera,     desc: 'Photo de tes notes' },
 ]
 
 export default function Upload() {
   const navigate = useNavigate()
+  const { user } = useAuthStore()
   const [form, setForm] = useState({ title: '', content: '' })
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
@@ -22,7 +24,6 @@ export default function Upload() {
     const selected = e.target.files[0]
     if (!selected) return
     setFile(selected)
-
     if (mode === 'image') {
       const reader = new FileReader()
       reader.onload = (ev) => setPreview(ev.target.result)
@@ -36,18 +37,15 @@ export default function Upload() {
     e.preventDefault()
     setLoading(true)
     setError('')
-
     try {
       const formData = new FormData()
       formData.append('title', form.title)
       formData.append('upload_type', mode)
-
       if (mode === 'text') {
         formData.append('content', form.content)
       } else if (file) {
         formData.append('file', file)
       }
-
       const res = await uploadCourse(formData)
       navigate(`/courses/${res.data.id}`)
     } catch (err) {
@@ -60,7 +58,6 @@ export default function Upload() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-950 via-indigo-900 to-slate-900">
 
-      {/* Navbar */}
       <nav className="border-b border-white/10 px-6 py-4 flex items-center gap-4">
         <Link to="/" className="text-indigo-400 hover:text-white transition">
           <ArrowLeft size={20} />
@@ -91,26 +88,39 @@ export default function Upload() {
         {/* Warning photo */}
         {mode === 'image' && (
           <div className="space-y-3 mb-6">
-            {/* Limites */}
+
+            {/* Limites — différent selon premium ou pas */}
             <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl px-5 py-4">
-              <p className="text-violet-300 font-semibold text-sm mb-2">📸 Limites photos</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white/5 rounded-xl p-3 text-center">
-                  <p className="text-white font-bold text-lg">1</p>
-                  <p className="text-indigo-400 text-xs">photo/jour gratuit</p>
+              <p className="text-violet-300 font-semibold text-sm mb-3">📸 Limites photos</p>
+              {user?.is_premium ? (
+                <div className="flex items-center gap-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
+                  <span className="text-2xl">✨</span>
+                  <div>
+                    <p className="text-yellow-300 font-semibold text-sm">Tu es Premium !</p>
+                    <p className="text-yellow-400 text-xs">Uploads illimités · 3 photos max par cours</p>
+                  </div>
                 </div>
-                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 text-center">
-                  <p className="text-yellow-300 font-bold text-lg">∞</p>
-                  <p className="text-yellow-400 text-xs">uploads Premium</p>
-                  <p className="text-yellow-500 text-xs">(3 photos max/cours)</p>
-                </div>
-              </div>
-              <Link
-                to="/premium"
-                className="block text-center text-violet-400 hover:text-violet-300 text-xs mt-2 underline"
-              >
-                Passer en Premium →
-              </Link>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white/5 rounded-xl p-3 text-center">
+                      <p className="text-white font-bold text-lg">1</p>
+                      <p className="text-indigo-400 text-xs">photo/jour gratuit</p>
+                    </div>
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 text-center">
+                      <p className="text-yellow-300 font-bold text-lg">∞</p>
+                      <p className="text-yellow-400 text-xs">uploads Premium</p>
+                      <p className="text-yellow-500 text-xs">(3 photos max/cours)</p>
+                    </div>
+                  </div>
+                  <Link
+                    to="/premium"
+                    className="block text-center text-violet-400 hover:text-violet-300 text-xs mt-3 underline"
+                  >
+                    Passer en Premium →
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Conseils qualité */}
@@ -118,7 +128,7 @@ export default function Upload() {
               <div className="flex items-start gap-3">
                 <AlertTriangle size={18} className="text-yellow-400 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-yellow-300 font-semibold text-sm mb-1">
+                  <p className="text-yellow-300 font-semibold text-sm mb-2">
                     Pour une analyse correcte :
                   </p>
                   <ul className="space-y-1">
@@ -141,6 +151,7 @@ export default function Upload() {
             </div>
           </div>
         )}
+
         {error && (
           <div className="bg-red-500/20 border border-red-500/30 text-red-300 rounded-xl px-4 py-3 mb-6 text-sm">
             {error}
@@ -257,8 +268,6 @@ export default function Upload() {
                 className="hidden"
                 onChange={handleFileChange}
               />
-
-              {/* Changer la photo */}
               {preview && (
                 <button
                   type="button"
