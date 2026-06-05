@@ -3,10 +3,11 @@ services:
     name: revio-backend
     runtime: python
     buildCommand: "pip install -r requirements.txt && python manage.py migrate"
-    startCommand: "gunicorn config.wsgi:application"
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT"
     envVars:
       - key: PYTHON_VERSION
         value: "3.14"
       - key: DEBUG
         value: "False"
-    healthCheckPath: /api/auth/profile/
+      - key: PORT
+        value: "10000"
