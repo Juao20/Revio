@@ -43,7 +43,7 @@ class CourseUploadView(APIView):
                     status=status.HTTP_403_FORBIDDEN
                 )
 
-        serializer = CourseUploadSerializer(data=request.data)
+        serializer = CourseUploadSerializer(data=request.data, context={'request': request})
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

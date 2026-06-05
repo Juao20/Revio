@@ -12,7 +12,7 @@ class CourseSerializer(serializers.ModelSerializer):
             'summary', 'key_concepts', 'estimated_mastery_time',
             'concept_count', 'course_difficulty', 'estimated_study_time_minutes',
             'course_type', 'mastery_score', 'mastery_label', 'exam_unlocked',
-            'created_at'
+            'photos_count', 'created_at'
         ]
         read_only_fields = ['id', 'created_at']
 
@@ -26,6 +26,17 @@ class CourseUploadSerializer(serializers.ModelSerializer):
         fields = ['title', 'content', 'file']
 
     def validate(self, data):
-        if not data.get('content') and not data.get('file'):
-            raise serializers.ValidationError("Tu dois fournir un fichier PDF ou du texte.")
+        # Récupérer le upload_type depuis le contexte de la requête
+        request = self.context.get('request')
+        upload_type = request.data.get('upload_type', 'text') if request else 'text'
+
+        if upload_type == 'text' and not data.get('content'):
+            raise serializers.ValidationError("Le contenu est requis pour le mode texte.")
+
+        if upload_type == 'pdf' and not data.get('file'):
+            raise serializers.ValidationError("Un fichier PDF est requis pour le mode PDF.")
+
+        # Pour le mode image les photos sont dans request.FILES directement
+        # donc pas besoin de valider ici
+
         return data
