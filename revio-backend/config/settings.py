@@ -9,8 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = (os.getenv('ALLOWED_HOSTS', 'localhost').split(',') + 
-                 ['revio-w94h.onrender.com', '*.onrender.com', 'localhost', '127.0.0.1'])
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -94,15 +93,13 @@ MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 # CORS en production
 CORS_ALLOWED_ORIGINS = [
     os.getenv('FRONTEND_URL', 'http://localhost:5173'),
-    'https://revio-w94h.onrender.com',
 ]
 CORS_ALLOW_ALL_ORIGINS = False
 
 # CSRF en production
 CSRF_TRUSTED_ORIGINS = [
     os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000'),
-    'https://revio-w94h.onrender.com',
-    'https://*.onrender.com',
+    'https://revio.up.railway.app',
 ]
 
 # Storage local (dev)
