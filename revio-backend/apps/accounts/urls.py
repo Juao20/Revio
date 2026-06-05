@@ -3,6 +3,7 @@ from .views import (
     RegisterView, LoginView, ProfileView,
     CreateCheckoutView, LemonSqueezyWebhookView,
     NotificationListView, NotificationReadView, NotificationReadAllView,
+    BugReportListCreateView, BugReportDetailView,
 )
 
 urlpatterns = [
@@ -14,4 +15,6 @@ urlpatterns = [
     path('notifications/', NotificationListView.as_view(), name='notifications'),
     path('notifications/<int:notif_id>/read/', NotificationReadView.as_view(), name='notif-read'),
     path('notifications/read-all/', NotificationReadAllView.as_view(), name='notif-read-all'),
+    path('bugs/', BugReportListCreateView.as_view(), name='bug-list-create'),
+    path('bugs/<int:bug_id>/', BugReportDetailView.as_view(), name='bug-detail'),
 ]

@@ -9,10 +9,10 @@ from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 import json
 import os
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
+from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, BugReportSerializer
 from .lemonsqueezy import create_checkout, MONTHLY_VARIANT_ID, YEARLY_VARIANT_ID
 from .webhook import verify_webhook
-from .models import Notification
+from .models import Notification, BugReport
 from .serializers import NotificationSerializer
 from .notifications import notify_welcome
 
@@ -189,3 +189,35 @@ class RegisterView(APIView):
                 'user': UserSerializer(user).data
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BugReportListCreateView(APIView):
+    """Créer et lister les rapports de bugs"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Liste les rapports de l'utilisateur"""
+        bug_reports = BugReport.objects.filter(user=request.user)
+        serializer = BugReportSerializer(bug_reports, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """Créer un nouveau rapport de bug"""
+        serializer = BugReportSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BugReportDetailView(APIView):
+    """Détail d'un rapport de bug"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, bug_id):
+        try:
+            bug_report = BugReport.objects.get(pk=bug_id, user=request.user)
+            serializer = BugReportSerializer(bug_report)
+            return Response(serializer.data)
+        except BugReport.DoesNotExist:
+            return Response({'error': 'Rapport introuvable'}, status=status.HTTP_404_NOT_FOUND)

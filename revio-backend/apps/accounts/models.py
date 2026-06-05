@@ -143,3 +143,27 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.user.username} — {self.title}"
+
+
+class BugReport(models.Model):
+    SEVERITY_CHOICES = [
+        ('low', 'Faible'),
+        ('medium', 'Moyen'),
+        ('high', 'Élevé'),
+        ('critical', 'Critique'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bug_reports')
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    severity = models.CharField(max_length=20, choices=SEVERITY_CHOICES, default='medium')
+    page = models.CharField(max_length=255, blank=True, null=True)
+    is_resolved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.get_severity_display()}] {self.title}"

@@ -18,6 +18,7 @@ import Exam from './pages/study/Exam'
 import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
 import PremiumSuccess from './pages/PremiumSuccess'
+import BugReport from './pages/BugReport'
 
 const PrivateRoute = ({ children }) => {
   const token = useAuthStore((s) => s.token)
@@ -54,6 +55,7 @@ export default function App() {
       <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
       <Route path="/premium" element={<PrivateRoute><Premium /></PrivateRoute>} />
       <Route path="/upload" element={<PrivateRoute><Upload /></PrivateRoute>} />
+      <Route path="/bug-report" element={<PrivateRoute><BugReport /></PrivateRoute>} />
       <Route path="/courses/:id" element={<PrivateRoute><CourseDetail /></PrivateRoute>} />
       <Route path="/courses/:id/quiz" element={<PrivateRoute><Quiz /></PrivateRoute>} />
       <Route path="/courses/:id/plan" element={<PrivateRoute><RevisionPlan /></PrivateRoute>} />

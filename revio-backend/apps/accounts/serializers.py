@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Notification
+from .models import Notification, BugReport
 
 User = get_user_model()
 
@@ -53,3 +53,17 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = ['id', 'type', 'title', 'message', 'is_read', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+
+class BugReportSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(write_only=True, required=False)
+    
+    class Meta:
+        model = BugReport
+        fields = ['id', 'title', 'description', 'severity', 'page', 'is_resolved', 'user_email', 'created_at']
+        read_only_fields = ['id', 'created_at', 'is_resolved']
+
+    def create(self, validated_data):
+        # Supprimer le champ user_email avant la création
+        validated_data.pop('user_email', None)
+        return super().create(validated_data)
