@@ -11,15 +11,28 @@ from .serializers import (
     StudySessionSerializer, RevisionPlanSerializer, StudyActivitySerializer,
     ExamSessionSerializer
 )
+from apps.accounts.notifications import (
+    notify_flashcards_due,
+    notify_level_up,
+    notify_exam_unlocked,
+    notify_weak_points,
+    notify_premium_active,
+)
 import random
 from .ai_service import generate_study_content, ask_professor, generate_revision_plan, generate_exam_questions
 
 
 def record_activity(user, xp=0):
-    """Met à jour streak, XP et heatmap"""
+    """Met à jour streak, XP, heatmap et notifications"""
+    old_level = user.level['number']
     user.update_streak()
     if xp > 0:
         user.add_xp(xp)
+        # Vérifier level up
+        new_level = user.level
+        if new_level['number'] > old_level:
+            notify_level_up(user, new_level)
+
     today = timezone.now().date()
     activity, _ = StudyActivity.objects.get_or_create(user=user, date=today)
     activity.sessions_count += 1
@@ -226,6 +239,8 @@ class WeakPointsView(APIView):
         weak_points.sort(key=lambda x: x['score'])
         strong_points.sort(key=lambda x: x['score'], reverse=True)
 
+        if weak_points:
+            notify_weak_points(request.user, course.title, weak_points)
         return Response({
             'weak_points': weak_points,
             'strong_points': strong_points,
@@ -475,6 +490,10 @@ class ExamSubmitView(APIView):
 
         # Mettre à jour la maîtrise du cours
         exam.course.update_mastery()
+
+        # Notifier si examen final débloqué
+        if exam.course.exam_unlocked and difficulty != 'final':
+            notify_exam_unlocked(request.user, exam.course.title)
 
         # XP selon score
         percentage = round((score / exam.total_questions) * 100) if exam.total_questions > 0 else 0

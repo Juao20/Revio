@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from .models import Notification
 
 User = get_user_model()
 
@@ -46,3 +47,9 @@ class UserSerializer(serializers.ModelSerializer):
             return -1  # illimité
         used = obj.daily_ai_questions_used
         return max(0, 7 - used)
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'type', 'title', 'message', 'is_read', 'created_at']
+        read_only_fields = ['id', 'created_at']

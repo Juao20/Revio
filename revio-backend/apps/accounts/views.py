@@ -12,6 +12,9 @@ import os
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
 from .lemonsqueezy import create_checkout, MONTHLY_VARIANT_ID, YEARLY_VARIANT_ID
 from .webhook import verify_webhook
+from .models import Notification
+from .serializers import NotificationSerializer
+from .notifications import notify_welcome
 
 User = get_user_model()
 
@@ -130,3 +133,59 @@ class LemonSqueezyWebhookView(APIView):
             user.save()
 
         return HttpResponse(status=200)
+
+class NotificationListView(APIView):
+    """Liste des notifications"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        notifications = Notification.objects.filter(user=request.user)[:20]
+        unread_count = Notification.objects.filter(
+            user=request.user,
+            is_read=False
+        ).count()
+        return Response({
+            'notifications': NotificationSerializer(notifications, many=True).data,
+            'unread_count': unread_count,
+        })
+
+
+class NotificationReadView(APIView):
+    """Marquer une notification comme lue"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, notif_id):
+        try:
+            notif = Notification.objects.get(pk=notif_id, user=request.user)
+            notif.is_read = True
+            notif.save()
+            return Response({'success': True})
+        except Notification.DoesNotExist:
+            return Response({'error': 'Notification introuvable'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class NotificationReadAllView(APIView):
+    """Marquer toutes les notifications comme lues"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        return Response({'success': True})
+
+
+# Mettre à jour RegisterView pour envoyer la notif de bienvenue
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            token, _ = Token.objects.get_or_create(user=user)
+            # Notification de bienvenue
+            notify_welcome(user)
+            return Response({
+                'token': token.key,
+                'user': UserSerializer(user).data
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

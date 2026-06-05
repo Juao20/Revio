@@ -117,3 +117,28 @@ class User(AbstractUser):
         if self.is_premium:
             return -1
         return max(0, 7 - self.daily_ai_questions_used)
+    
+class Notification(models.Model):
+    TYPE_CHOICES = [
+        ('flashcards_due',   '🃏 Flashcards à revoir'),
+        ('streak_danger',    '🔥 Streak en danger'),
+        ('streak_broken',    '💔 Streak cassé'),
+        ('level_up',         '⭐ Niveau supérieur'),
+        ('exam_unlocked',    '🏆 Examen débloqué'),
+        ('welcome',          '👋 Bienvenue'),
+        ('premium_active',   '✨ Premium activé'),
+        ('weak_points',      '🎯 Points faibles détectés'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
+    type = models.CharField(max_length=30, choices=TYPE_CHOICES)
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} — {self.title}"
