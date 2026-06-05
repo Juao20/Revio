@@ -182,52 +182,6 @@ export default function CourseDetail() {
             <p className="text-indigo-400 text-xs">{course.mastery_label}</p>
           </div>
         )}
-        {/* Ajouter photo — Premium uniquement */}
-        {user?.is_premium && (course?.photos_count ?? 0) < 3 && (
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-white text-sm font-medium">📸 Ajouter une photo au cours</p>
-                <p className="text-indigo-400 text-xs mt-0.5">
-                  {course?.photos_count || 0}/3 photos ajoutées
-                </p>
-              </div>
-              <button
-                onClick={() => document.getElementById('add-photo-input').click()}
-                disabled={addingPhoto}
-                className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-xl transition"
-              >
-                {addingPhoto ? '🔍 Analyse...' : '+ Ajouter'}
-              </button>
-            </div>
-            {photoError && (
-              <p className="text-red-400 text-xs mt-2">{photoError}</p>
-            )}
-            {addingPhoto && (
-              <p className="text-indigo-400 text-xs mt-2 animate-pulse">
-                🔍 Extraction du texte en cours...
-              </p>
-            )}
-            <input
-              id="add-photo-input"
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/webp"
-              capture="environment"
-              className="hidden"
-              onChange={handleAddPhoto}
-            />
-          </div>
-        )}
-
-        {/* Message si 3 photos atteintes */}
-        {user?.is_premium && (course?.photos_count ?? 0) >= 3 && (
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 flex items-center gap-3">
-            <span className="text-xl">📸</span>
-            <p className="text-indigo-400 text-sm">
-              Maximum 3 photos atteint pour ce cours.
-            </p>
-          </div>
-        )}
 
         {/* Grille actions */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
