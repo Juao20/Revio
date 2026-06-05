@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Send, AlertCircle, CheckCircle } from 'lucide-react'
 import useAuthStore from '../stores/authStore'
+import { createBugReport } from '../api/bugs'
 
 export default function BugReport() {
   const navigate = useNavigate()
@@ -28,36 +29,17 @@ export default function BugReport() {
     setLoading(true)
 
     try {
-      const token = useAuthStore.getState().token
-      console.log('Token:', token)
-      console.log('Form data:', formData)
-
-      const response = await fetch('/api/accounts/bugs/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: formData.title,
-          description: formData.description,
-          severity: formData.severity,
-          page: formData.page,
-        }),
+      await createBugReport({
+        title: formData.title,
+        description: formData.description,
+        severity: formData.severity,
+        page: formData.page,
       })
 
-      console.log('Response status:', response.status)
-      const responseData = await response.json()
-      console.log('Response data:', responseData)
-
-      if (response.ok) {
-        setSubmitted(true)
-        setTimeout(() => {
-          navigate('/')
-        }, 2000)
-      } else {
-        alert(`Erreur ${response.status}: ${responseData.detail || JSON.stringify(responseData)}`)
-      }
+      setSubmitted(true)
+      setTimeout(() => {
+        navigate('/')
+      }, 2000)
     } catch (error) {
       console.error('Erreur lors de l\'envoi du bug report:', error)
       alert('Erreur lors de l\'envoi du rapport. Veuillez réessayer.')
