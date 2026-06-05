@@ -90,33 +90,57 @@ export default function Upload() {
 
         {/* Warning photo */}
         {mode === 'image' && (
-          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl px-5 py-4 mb-6">
-            <div className="flex items-start gap-3">
-              <AlertTriangle size={18} className="text-yellow-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-yellow-300 font-semibold text-sm mb-1">
-                  Pour une analyse correcte :
-                </p>
-                <ul className="space-y-1">
-                  {[
-                    'Prends la photo dans un endroit bien éclairé',
-                    'Cadre bien la page entière sans la couper',
-                    'Évite les reflets et les ombres sur le document',
-                    'Tiens ton téléphone stable et bien droit',
-                    'Assure-toi que le texte est net et lisible',
-                    'Une page à la fois pour un meilleur résultat',
-                  ].map((tip, i) => (
-                    <li key={i} className="text-yellow-200 text-xs flex items-center gap-2">
-                      <span className="w-1 h-1 bg-yellow-400 rounded-full shrink-0" />
-                      {tip}
-                    </li>
-                  ))}
-                </ul>
+          <div className="space-y-3 mb-6">
+            {/* Limites */}
+            <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl px-5 py-4">
+              <p className="text-violet-300 font-semibold text-sm mb-2">📸 Limites photos</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white/5 rounded-xl p-3 text-center">
+                  <p className="text-white font-bold text-lg">1</p>
+                  <p className="text-indigo-400 text-xs">photo/jour gratuit</p>
+                </div>
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 text-center">
+                  <p className="text-yellow-300 font-bold text-lg">∞</p>
+                  <p className="text-yellow-400 text-xs">uploads Premium</p>
+                  <p className="text-yellow-500 text-xs">(3 photos max/cours)</p>
+                </div>
+              </div>
+              <Link
+                to="/premium"
+                className="block text-center text-violet-400 hover:text-violet-300 text-xs mt-2 underline"
+              >
+                Passer en Premium →
+              </Link>
+            </div>
+
+            {/* Conseils qualité */}
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl px-5 py-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle size={18} className="text-yellow-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-yellow-300 font-semibold text-sm mb-1">
+                    Pour une analyse correcte :
+                  </p>
+                  <ul className="space-y-1">
+                    {[
+                      'Prends la photo dans un endroit bien éclairé',
+                      'Cadre bien la page entière sans la couper',
+                      'Évite les reflets et les ombres sur le document',
+                      'Tiens ton téléphone stable et bien droit',
+                      'Assure-toi que le texte est net et lisible',
+                      'Une page à la fois pour un meilleur résultat',
+                    ].map((tip, i) => (
+                      <li key={i} className="text-yellow-200 text-xs flex items-center gap-2">
+                        <span className="w-1 h-1 bg-yellow-400 rounded-full shrink-0" />
+                        {tip}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
         )}
-
         {error && (
           <div className="bg-red-500/20 border border-red-500/30 text-red-300 rounded-xl px-4 py-3 mb-6 text-sm">
             {error}

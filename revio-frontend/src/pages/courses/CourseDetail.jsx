@@ -5,6 +5,7 @@ import { getCourse, deleteCourse } from '../../api/courses'
 import { generateContent, getFlashcards, getQuizzes, reviewFlashcard, getWeakPoints, askProfessor } from '../../api/study'
 import { ArrowLeft, Zap, Brain, Trash2, Calendar, MessageCircle, Send, Clock, Target, Trophy } from 'lucide-react'
 import useAuthStore from '../../stores/authStore'
+import { addPhotoToCourse } from '../../api/courses'
 
 const difficultyColor = {
   easy: 'text-emerald-400 bg-emerald-500/20 border-emerald-500/30',
@@ -106,6 +107,26 @@ export default function CourseDetail() {
     setFlipped((prev) => ({ ...prev, [cardId]: !prev[cardId] }))
   }
 
+  const [addingPhoto, setAddingPhoto] = useState(false)
+  const [photoError, setPhotoError] = useState('')
+
+  const handleAddPhoto = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setAddingPhoto(true)
+    setPhotoError('')
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      await addPhotoToCourse(id, formData)
+      queryClient.invalidateQueries(['course', id])
+    } catch (err) {
+      setPhotoError(err.response?.data?.error || 'Erreur lors de l\'ajout de la photo')
+    } finally {
+      setAddingPhoto(false)
+    }
+  }
+
   const tabs = [
     { key: 'summary', label: '📋 Résumé' },
     { key: 'flashcards', label: `🃏 Flashcards (${flashcards.length})` },
@@ -162,6 +183,36 @@ export default function CourseDetail() {
             <p className="text-indigo-400 text-xs">{course.mastery_label}</p>
           </div>
         )}
+        {user?.is_premium && course?.photos_count < 3 && (
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white text-sm font-medium">📸 Ajouter une photo au cours</p>
+              <p className="text-indigo-400 text-xs mt-0.5">
+                {course?.photos_count || 0}/3 photos ajoutées
+              </p>
+            </div>
+            <button
+              onClick={() => document.getElementById('add-photo-input').click()}
+              disabled={addingPhoto}
+              className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-xl transition"
+            >
+              {addingPhoto ? 'Analyse...' : '+ Ajouter'}
+            </button>
+          </div>
+          {photoError && (
+            <p className="text-red-400 text-xs mt-2">{photoError}</p>
+          )}
+          <input
+            id="add-photo-input"
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            capture="environment"
+            className="hidden"
+            onChange={handleAddPhoto}
+          />
+        </div>
+      )}
         {/* Actions */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
           <button
