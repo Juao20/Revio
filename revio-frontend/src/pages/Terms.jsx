@@ -22,15 +22,15 @@ export default function Terms() {
         {[
           {
             title: '1. Acceptation des conditions',
-            content: `En accédant à StudyBuddy et en l'utilisant, vous acceptez d'être lié par ces conditions d'utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser notre service. StudyBuddy se réserve le droit de modifier ces conditions à tout moment.`,
+            content: `En accédant à Revio et en l'utilisant, vous acceptez d'être lié par ces conditions d'utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser notre service. Revio se réserve le droit de modifier ces conditions à tout moment.`,
           },
           {
             title: '2. Description du service',
-            content: `StudyBuddy est une plateforme d'apprentissage assistée par intelligence artificielle qui transforme vos cours en outils de révision personnalisés : flashcards, quiz, résumés et plans de révision. Le service est disponible en version gratuite et en version Premium.`,
+            content: `Revio est une plateforme d'apprentissage assistée par intelligence artificielle qui transforme vos cours en outils de révision personnalisés : flashcards, quiz, résumés et plans de révision. Le service est disponible en version gratuite et en version Premium.`,
           },
           {
             title: '3. Compte utilisateur',
-            content: `Vous êtes responsable de maintenir la confidentialité de vos identifiants de connexion. Vous acceptez de ne pas partager votre compte avec d'autres personnes. StudyBuddy se réserve le droit de suspendre ou supprimer tout compte en cas d'utilisation abusive.`,
+            content: `Vous êtes responsable de maintenir la confidentialité de vos identifiants de connexion. Vous acceptez de ne pas partager votre compte avec d'autres personnes. Revio se réserve le droit de suspendre ou supprimer tout compte en cas d'utilisation abusive.`,
           },
           {
             title: '4. Abonnement Premium',
@@ -38,15 +38,15 @@ export default function Terms() {
           },
           {
             title: '5. Utilisation acceptable',
-            content: `Vous vous engagez à utiliser StudyBuddy uniquement à des fins légales et éducatives. Il est interdit d'utiliser notre service pour générer du contenu illégal, trompeur ou nuisible. Toute tentative de contournement des limitations du service est interdite.`,
+            content: `Vous vous engagez à utiliser Revio uniquement à des fins légales et éducatives. Il est interdit d'utiliser notre service pour générer du contenu illégal, trompeur ou nuisible. Toute tentative de contournement des limitations du service est interdite.`,
           },
           {
             title: '6. Propriété intellectuelle',
-            content: `Le contenu que vous uploadez reste votre propriété. En l'uploadant sur StudyBuddy, vous nous accordez une licence limitée pour traiter ce contenu via notre IA afin de générer vos outils de révision. Le contenu généré par notre IA est mis à votre disposition pour un usage personnel et éducatif uniquement.`,
+            content: `Le contenu que vous uploadez reste votre propriété. En l'uploadant sur Revio, vous nous accordez une licence limitée pour traiter ce contenu via notre IA afin de générer vos outils de révision. Le contenu généré par notre IA est mis à votre disposition pour un usage personnel et éducatif uniquement.`,
           },
           {
             title: '7. Limitation de responsabilité',
-            content: `StudyBuddy est fourni "tel quel" sans garantie d'aucune sorte. Nous ne garantissons pas l'exactitude du contenu généré par l'IA. StudyBuddy ne saurait être tenu responsable des résultats académiques obtenus en utilisant notre service.`,
+            content: `Revio est fourni "tel quel" sans garantie d'aucune sorte. Nous ne garantissons pas l'exactitude du contenu généré par l'IA. Revio ne saurait être tenu responsable des résultats académiques obtenus en utilisant notre service.`,
           },
           {
             title: '8. Protection des données',
@@ -54,11 +54,11 @@ export default function Terms() {
           },
           {
             title: '9. Résiliation',
-            content: `Vous pouvez supprimer votre compte à tout moment. StudyBuddy se réserve le droit de résilier votre accès en cas de violation de ces conditions. En cas de résiliation, vos données seront supprimées dans un délai de 30 jours.`,
+            content: `Vous pouvez supprimer votre compte à tout moment. Revio se réserve le droit de résilier votre accès en cas de violation de ces conditions. En cas de résiliation, vos données seront supprimées dans un délai de 30 jours.`,
           },
           {
             title: '10. Contact',
-            content: `Pour toute question concernant ces conditions d'utilisation, contactez-nous à : support@studybuddy.app`,
+            content: `Pour toute question concernant ces conditions d'utilisation, contactez-nous à : support@revio.app`,
           },
         ].map((section, i) => (
           <div key={i} className="bg-white/10 border border-white/20 rounded-2xl p-6">

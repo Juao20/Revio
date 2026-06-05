@@ -26,7 +26,7 @@ export default function Privacy() {
           },
           {
             title: '2. Utilisation des données',
-            content: `Vos données sont utilisées pour : fournir et améliorer le service StudyBuddy, générer vos outils de révision personnalisés via notre IA, suivre votre progression et calculer votre maîtrise, vous envoyer des notifications liées à votre compte (si activées), traiter vos paiements via LemonSqueezy.`,
+            content: `Vos données sont utilisées pour : fournir et améliorer le service Revio, générer vos outils de révision personnalisés via notre IA, suivre votre progression et calculer votre maîtrise, vous envoyer des notifications liées à votre compte (si activées), traiter vos paiements via LemonSqueezy.`,
           },
           {
             title: '3. Stockage et sécurité',
@@ -38,11 +38,11 @@ export default function Privacy() {
           },
           {
             title: '5. Cookies',
-            content: `StudyBuddy utilise uniquement des cookies essentiels au fonctionnement du service (authentification, préférences). Nous n'utilisons pas de cookies publicitaires ou de tracking tiers.`,
+            content: `Revio utilise uniquement des cookies essentiels au fonctionnement du service (authentification, préférences). Nous n'utilisons pas de cookies publicitaires ou de tracking tiers.`,
           },
           {
             title: '6. Vos droits',
-            content: `Conformément au RGPD, vous disposez des droits suivants : droit d'accès à vos données, droit de rectification, droit à l'effacement (droit à l'oubli), droit à la portabilité, droit d'opposition. Pour exercer ces droits, contactez-nous à : privacy@studybuddy.app`,
+            content: `Conformément au RGPD, vous disposez des droits suivants : droit d'accès à vos données, droit de rectification, droit à l'effacement (droit à l'oubli), droit à la portabilité, droit d'opposition. Pour exercer ces droits, contactez-nous à : privacy@revio.app`,
           },
           {
             title: '7. Conservation des données',
@@ -50,7 +50,7 @@ export default function Privacy() {
           },
           {
             title: '8. Mineurs',
-            content: `StudyBuddy n'est pas destiné aux enfants de moins de 13 ans. Si vous avez moins de 16 ans, l'accord d'un parent ou tuteur est requis pour utiliser notre service.`,
+            content: `Revio n'est pas destiné aux enfants de moins de 13 ans. Si vous avez moins de 16 ans, l'accord d'un parent ou tuteur est requis pour utiliser notre service.`,
           },
           {
             title: '9. Modifications',
@@ -58,7 +58,7 @@ export default function Privacy() {
           },
           {
             title: '10. Contact',
-            content: `Pour toute question concernant la protection de vos données : privacy@studybuddy.app`,
+            content: `Pour toute question concernant la protection de vos données : privacy@revio.app`,
           },
         ].map((section, i) => (
           <div key={i} className="bg-white/10 border border-white/20 rounded-2xl p-6">

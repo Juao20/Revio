@@ -39,7 +39,7 @@ export default function Register() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-violet-500 rounded-2xl mb-4 shadow-lg shadow-violet-500/30">
             <span className="text-2xl">🎓</span>
           </div>
-          <h1 className="text-3xl font-bold text-white">StudyBuddy</h1>
+          <h1 className="text-3xl font-bold text-white">Revio</h1>
           <p className="text-indigo-300 mt-1">Ton coach de révision IA</p>
         </div>
 
