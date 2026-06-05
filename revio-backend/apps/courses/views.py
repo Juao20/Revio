@@ -69,31 +69,46 @@ class CourseUploadView(APIView):
                 )
 
         # Extraction image
-        elif upload_type == 'image' and file and not content:
-            if file.content_type not in ALLOWED_IMAGE_TYPES:
-                return Response(
-                    {'error': 'Format non supporté. Utilise JPG, PNG ou WEBP.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            if file.size > 10 * 1024 * 1024:
-                return Response(
-                    {'error': 'Image trop lourde. Maximum 10MB.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            try:
-                image_data = file.read()
-                content = extract_text_from_image(image_data, file.content_type)
-                if not content.strip():
+        elif upload_type == 'image':
+            photos_count = int(request.data.get('photos_count', 1))
+            extracted_contents = []
+
+            for i in range(photos_count):
+                photo = request.FILES.get(f'photo_{i}')
+                if not photo:
+                    continue
+
+                if photo.content_type not in ALLOWED_IMAGE_TYPES:
                     return Response(
-                        {'error': 'Impossible d\'extraire le texte. Vérifie la qualité de la photo.'},
+                        {'error': f'Photo {i+1} : format non supporté. Utilise JPG, PNG ou WEBP.'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                user.increment_photo_upload()
-            except Exception as e:
+
+                if photo.size > 10 * 1024 * 1024:
+                    return Response(
+                        {'error': f'Photo {i+1} trop lourde. Maximum 10MB.'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                try:
+                    image_data = photo.read()
+                    extracted = extract_text_from_image(image_data, photo.content_type)
+                    if extracted.strip():
+                        extracted_contents.append(f'--- Page {i+1} ---\n\n{extracted}')
+                except Exception as e:
+                    return Response(
+                        {'error': f'Erreur analyse photo {i+1} : {str(e)}'},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+
+            if not extracted_contents:
                 return Response(
-                    {'error': f'Erreur analyse image : {str(e)}'},
+                    {'error': 'Impossible d\'extraire le texte des photos. Vérifie la qualité.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+
+            content = '\n\n'.join(extracted_contents)
+            user.increment_photo_upload()
 
         # Sauvegarder le cours
         course = Course.objects.create(
