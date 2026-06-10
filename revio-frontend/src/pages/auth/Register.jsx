@@ -22,7 +22,7 @@ export default function Register() {
     try {
       const res = await register(form)
       setAuth(res.data.user, res.data.token)
-      navigate('/')
+      navigate('/onboarding')
     } catch (err) {
       setError('Erreur lors de l\'inscription. Vérifie tes informations.')
     } finally {
