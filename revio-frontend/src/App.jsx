@@ -52,6 +52,7 @@ export default function App() {
     queryKey: ['profile'],
     queryFn: () => getProfile().then((r) => r.data),
     enabled: !!token,
+    retry: false,
   })
 
   useEffect(() => {

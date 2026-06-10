@@ -22,21 +22,29 @@ export default function Dashboard() {
   const { data: profile } = useQuery({
     queryKey: ['profile'],
     queryFn: () => getProfile().then((r) => r.data),
+    enabled: !!localStorage.getItem('token'), // ← ajoute ça
+    retry: false,
   })
 
   const { data: courses = [], isLoading } = useQuery({
     queryKey: ['courses'],
     queryFn: () => getCourses().then((r) => r.data),
+    enabled: !!localStorage.getItem('token'), // ← ajoute ça
+    retry: false,
   })
 
   const { data: dueData } = useQuery({
     queryKey: ['due-flashcards'],
     queryFn: () => getDueFlashcards().then((r) => r.data),
+    enabled: !!localStorage.getItem('token'), // ← ajoute ça
+    retry: false,
   })
 
   const { data: heatmap = [] } = useQuery({
     queryKey: ['heatmap'],
     queryFn: () => getHeatmap().then((r) => r.data),
+    enabled: !!localStorage.getItem('token'), // ← ajoute ça
+    retry: false,
   })
 
   useEffect(() => {

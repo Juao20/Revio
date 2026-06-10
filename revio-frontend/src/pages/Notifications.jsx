@@ -39,10 +39,13 @@ function timeAgo(dateStr) {
 export default function Notifications() {
   const queryClient = useQueryClient()
 
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => getNotifications().then((r) => r.data),
-  })
+    refetchInterval: 30000,
+    enabled: !!localStorage.getItem('token'), // ← ajoute ça
+    retry: false,
+    })
 
   const readMutation = useMutation({
     mutationFn: markNotificationRead,
