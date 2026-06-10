@@ -29,7 +29,7 @@ def notify_welcome(user):
     create_notification(
         user,
         'welcome',
-        'Bienvenue sur StudyBuddy ! 👋',
+        'Bienvenue sur Revio ! 👋',
         'Commence par uploader ton premier cours pour générer tes flashcards et quiz.'
     )
 

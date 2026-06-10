@@ -77,7 +77,7 @@ export default function BugReport() {
             <div className="bg-blue-500/20 border border-blue-500/30 rounded-2xl p-4 mb-6 flex gap-3">
               <AlertCircle size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />
               <p className="text-blue-200 text-sm">
-                Aidez-nous à améliorer StudyBuddy en nous signalant les bugs que vous rencontrez.
+                Aidez-nous à améliorer Revio en nous signalant les bugs que vous rencontrez.
               </p>
             </div>
 
