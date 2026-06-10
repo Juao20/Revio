@@ -1,10 +1,9 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import useAuthStore from './stores/authStore'
 import { getProfile } from './api/auth'
 
-// Pages
 import Splash from './pages/Splash'
 import Onboarding from './pages/Onboarding'
 import Login from './pages/auth/Login'
@@ -28,25 +27,8 @@ const PrivateRoute = ({ children }) => {
   return token ? children : <Navigate to="/login" />
 }
 
-export default function App() {
+function AppContent() {
   const { token, setAuth } = useAuthStore()
-  const [showSplash, setShowSplash] = useState(false)
-  const [splashDone, setSplashDone] = useState(false)
-
-  // Splash — une seule fois par onglet (sessionStorage)
-  useEffect(() => {
-    const seen = sessionStorage.getItem('revio_splash_seen')
-    if (!seen) {
-      setShowSplash(true)
-      sessionStorage.setItem('revio_splash_seen', 'true')
-      setTimeout(() => {
-        setShowSplash(false)
-        setSplashDone(true)
-      }, 2500)
-    } else {
-      setSplashDone(true)
-    }
-  }, [])
 
   const { data: profile } = useQuery({
     queryKey: ['profile'],
@@ -60,12 +42,6 @@ export default function App() {
       setAuth(profile, token)
     }
   }, [profile, token])
-
-  // Afficher le splash
-  if (showSplash) return <Splash />
-
-  // Attendre que le splash soit fini
-  if (!splashDone) return null
 
   return (
     <Routes>
@@ -90,4 +66,28 @@ export default function App() {
       <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
     </Routes>
   )
+}
+
+export default function App() {
+  const [showSplash, setShowSplash] = useState(false)
+  const [splashDone, setSplashDone] = useState(false)
+
+  useEffect(() => {
+    const seen = sessionStorage.getItem('revio_splash_seen')
+    if (!seen) {
+      setShowSplash(true)
+      sessionStorage.setItem('revio_splash_seen', 'true')
+      setTimeout(() => {
+        setShowSplash(false)
+        setSplashDone(true)
+      }, 2500)
+    } else {
+      setSplashDone(true)
+    }
+  }, [])
+
+  if (showSplash) return <Splash />
+  if (!splashDone) return null
+
+  return <AppContent />
 }

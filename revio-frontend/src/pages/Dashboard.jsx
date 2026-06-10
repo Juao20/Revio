@@ -5,7 +5,7 @@ import { getCourses } from '../api/courses'
 import { getProfile } from '../api/auth'
 import { getDueFlashcards, getHeatmap } from '../api/study'
 import useAuthStore from '../stores/authStore'
-import { BookOpen, Plus, Clock, Zap, LogOut, Flame, Star, Brain, User } from 'lucide-react'
+import { BookOpen, Plus, Clock, Zap, LogOut, Flame, Star, Brain, User, Bug } from 'lucide-react'
 import NotificationBell from '../components/NotificationBell'
 
 const LEVEL_COLORS = {
