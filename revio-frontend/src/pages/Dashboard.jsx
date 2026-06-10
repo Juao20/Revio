@@ -6,6 +6,7 @@ import { getProfile } from '../api/auth'
 import { getDueFlashcards, getHeatmap } from '../api/study'
 import useAuthStore from '../stores/authStore'
 import { BookOpen, Plus, Clock, Zap, LogOut, Flame, Star, Brain, User } from 'lucide-react'
+import NotificationBell from '../components/NotificationBell'
 
 const LEVEL_COLORS = {
   1: 'from-slate-400 to-slate-500',
@@ -84,7 +85,8 @@ export default function Dashboard() {
               ✨ Premium
             </span>
           )}
-          <Link to="/profile" className="text-indigo-300 hover:text-white transition">
+          <NotificationBell />
+          <Link to="/profile" className="text-indigo-400 hover:text-white transition">
             <User size={20} />
           </Link>
           <button onClick={handleLogout} className="text-indigo-400 hover:text-white transition">

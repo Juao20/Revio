@@ -21,6 +21,7 @@ import PremiumSuccess from './pages/PremiumSuccess'
 import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
 import BugReport from './pages/BugReport'
+import Notifications from './pages/Notifications'
 
 const PrivateRoute = ({ children }) => {
   const token = useAuthStore((s) => s.token)
@@ -85,6 +86,7 @@ export default function App() {
       <Route path="/premium" element={<PrivateRoute><Premium /></PrivateRoute>} />
       <Route path="/premium/success" element={<PrivateRoute><PremiumSuccess /></PrivateRoute>} />
       <Route path="/bug-report" element={<PrivateRoute><BugReport /></PrivateRoute>} />
+      <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
     </Routes>
   )
 }
