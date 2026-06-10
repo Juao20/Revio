@@ -1,5 +1,5 @@
 from django.utils import timezone
-from .models import Notification  # ← import relatif
+from .models import Notification
 
 def create_notification(user, notif_type, title, message):
     today = timezone.now().date()
@@ -24,72 +24,79 @@ def create_notification(user, notif_type, title, message):
 
 def notify_welcome(user):
     create_notification(
-        user,
-        'welcome',
+        user, 'welcome',
         'Bienvenue sur Revio ! 👋',
         'Commence par uploader ton premier cours pour générer tes flashcards et quiz.'
     )
+    # Email de bienvenue
+    from .emails import email_welcome
+    email_welcome(user)
 
 
 def notify_flashcards_due(user, count):
     create_notification(
-        user,
-        'flashcards_due',
+        user, 'flashcards_due',
         f'{count} flashcard(s) à revoir aujourd\'hui 🃏',
         f'Tu as {count} flashcard(s) à revoir aujourd\'hui. Ne casse pas ta série !'
     )
+    # Pas d'email pour flashcards_due (trop fréquent)
 
 
 def notify_streak_danger(user):
     create_notification(
-        user,
-        'streak_danger',
+        user, 'streak_danger',
         'Ton streak est en danger ! 🔥',
         f'Tu as un streak de {user.current_streak} jours. Révise aujourd\'hui pour ne pas le perdre !'
     )
+    from .emails import email_streak_danger
+    email_streak_danger(user)
 
 
 def notify_streak_broken(user):
     create_notification(
-        user,
-        'streak_broken',
+        user, 'streak_broken',
         'Ton streak a été cassé 💔',
         'Pas de panique ! Recommence aujourd\'hui et construis une nouvelle série.'
     )
+    from .emails import email_streak_broken
+    email_streak_broken(user)
 
 
 def notify_level_up(user, new_level):
     create_notification(
-        user,
-        'level_up',
+        user, 'level_up',
         f'Niveau {new_level["number"]} atteint ! ⭐',
         f'Félicitations ! Tu es maintenant {new_level["name"]}. Continue comme ça !'
     )
+    from .emails import email_level_up
+    email_level_up(user, new_level)
 
 
 def notify_exam_unlocked(user, course_title):
     create_notification(
-        user,
-        'exam_unlocked',
+        user, 'exam_unlocked',
         'Examen Final débloqué ! 🏆',
         f'Tu as atteint 75% de maîtrise sur "{course_title}". L\'examen final est maintenant disponible !'
     )
+    from .emails import email_exam_unlocked
+    email_exam_unlocked(user, course_title)
 
 
 def notify_premium_active(user):
     create_notification(
-        user,
-        'premium_active',
+        user, 'premium_active',
         'Premium activé ! ✨',
         'Toutes les fonctionnalités Premium sont maintenant disponibles. Bonne révision !'
     )
+    from .emails import email_premium_active
+    email_premium_active(user)
 
 
 def notify_weak_points(user, course_title, weak_topics):
     topics_str = ', '.join([t['topic'] for t in weak_topics[:3]])
     create_notification(
-        user,
-        'weak_points',
+        user, 'weak_points',
         'Points faibles détectés 🎯',
         f'Sur "{course_title}", tu as des difficultés sur : {topics_str}. Travaille ces points !'
     )
+    # Pas d'email pour weak_points
