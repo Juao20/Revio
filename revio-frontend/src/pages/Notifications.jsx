@@ -39,7 +39,7 @@ function timeAgo(dateStr) {
 export default function Notifications() {
   const queryClient = useQueryClient()
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => getNotifications().then((r) => r.data),
     refetchInterval: 30000,
