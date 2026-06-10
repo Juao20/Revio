@@ -1,10 +1,7 @@
 from django.utils import timezone
+from .models import Notification  # ← import relatif
 
 def create_notification(user, notif_type, title, message):
-    """Crée une notification pour un utilisateur"""
-    from apps.accounts.models import Notification
-
-    # Éviter les doublons sur la même journée pour certains types
     today = timezone.now().date()
     daily_types = ['flashcards_due', 'streak_danger']
 
@@ -93,6 +90,6 @@ def notify_weak_points(user, course_title, weak_topics):
     create_notification(
         user,
         'weak_points',
-        f'Points faibles détectés 🎯',
+        'Points faibles détectés 🎯',
         f'Sur "{course_title}", tu as des difficultés sur : {topics_str}. Travaille ces points !'
     )
