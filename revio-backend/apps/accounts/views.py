@@ -14,7 +14,7 @@ from .lemonsqueezy import create_checkout, MONTHLY_VARIANT_ID, YEARLY_VARIANT_ID
 from .webhook import verify_webhook
 from .models import Notification, BugReport
 from .serializers import NotificationSerializer
-from .notifications import notify_welcome, notify_premium_active
+from .notifications import notify_welcome
 
 User = get_user_model()
 
@@ -128,7 +128,6 @@ class LemonSqueezyWebhookView(APIView):
         if event in ['subscription_created', 'subscription_resumed', 'order_created']:
             user.is_premium = True
             user.save()
-            notify_premium_active(user)
 
         # Désactiver Premium
         elif event in ['subscription_cancelled', 'subscription_expired', 'subscription_paused']:
