@@ -89,6 +89,13 @@ export default function Dashboard() {
           <Link to="/profile" className="text-indigo-400 hover:text-white transition">
             <User size={20} />
           </Link>
+          <Link
+            to="/bug-report"
+            className="text-indigo-400 hover:text-white transition"
+            title="Signaler un bug"
+          >
+            <Bug size={18} />
+          </Link>
           <button onClick={handleLogout} className="text-indigo-400 hover:text-white transition">
             <LogOut size={18} />
           </button>
