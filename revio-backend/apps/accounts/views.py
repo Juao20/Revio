@@ -10,6 +10,7 @@ from django.http import HttpResponse
 import json
 import os
 import requests
+import secrets
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, BugReportSerializer
 from .lemonsqueezy import create_checkout, MONTHLY_VARIANT_ID, YEARLY_VARIANT_ID
 from .webhook import verify_webhook
@@ -81,7 +82,7 @@ class GoogleLoginView(APIView):
                 user = User.objects.create_user(
                     username=username,
                     email=email,
-                    password=User.objects.make_random_password()
+                    password=secrets.token_urlsafe(16)
                 )
                 # Notification de bienvenue
                 notify_welcome(user)
