@@ -9,6 +9,7 @@ from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 import json
 import os
+import requests
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, BugReportSerializer
 from .lemonsqueezy import create_checkout, MONTHLY_VARIANT_ID, YEARLY_VARIANT_ID
 from .webhook import verify_webhook
@@ -35,6 +36,65 @@ class RegisterView(APIView):
                 'user': UserSerializer(user).data
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GoogleLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        token = request.data.get('token')
+        if not token:
+            return Response({'error': 'Token manquant'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Appel de l'API Google pour vérifier l'ID Token
+            google_response = requests.get(
+                f"https://oauth2.googleapis.com/tokeninfo?id_token={token}",
+                timeout=10
+            )
+            if google_response.status_code != 200:
+                return Response({'error': 'Token Google invalide ou expiré'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user_info = google_response.json()
+            
+            # Validation optionnelle de l'audience
+            client_id = os.getenv('GOOGLE_CLIENT_ID')
+            if client_id and user_info.get('aud') != client_id:
+                return Response({'error': 'Audience invalide'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            email = user_info.get('email')
+            if not email:
+                return Response({'error': 'Email non fourni par Google'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Récupérer ou créer l'utilisateur
+            user = User.objects.filter(email=email).first()
+            if not user:
+                # Créer un nom d'utilisateur unique
+                username = email.split('@')[0]
+                original_username = username
+                counter = 1
+                while User.objects.filter(username=username).exists():
+                    username = f"{original_username}{counter}"
+                    counter += 1
+                
+                # Créer l'utilisateur avec un mot de passe aléatoire
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=User.objects.make_random_password()
+                )
+                # Notification de bienvenue
+                notify_welcome(user)
+            
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({
+                'token': token.key,
+                'user': UserSerializer(user).data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({'error': f'Erreur de vérification: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class LoginView(APIView):

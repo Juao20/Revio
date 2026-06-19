@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { login } from '../../api/auth'
+import { login, googleLogin } from '../../api/auth'
 import useAuthStore from '../../stores/authStore'
 
 export default function Login() {
@@ -9,6 +9,50 @@ export default function Login() {
   const [form, setForm] = useState({ username: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const handleGoogleResponse = async (response) => {
+    const idToken = response.credential
+    setLoading(true)
+    setError('')
+    try {
+      const res = await googleLogin(idToken)
+      setAuth(res.data.user, res.data.token)
+      navigate('/')
+    } catch (err) {
+      setError(err.response?.data?.error || 'Échec de la connexion avec Google.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+    if (!clientId) return
+
+    const initializeGoogle = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleResponse,
+        })
+        window.google.accounts.id.renderButton(
+          document.getElementById('google-signin-button'),
+          { theme: 'outline', size: 'large', width: '100%', text: 'signin_with' }
+        )
+        return true
+      }
+      return false
+    }
+
+    if (!initializeGoogle()) {
+      const interval = setInterval(() => {
+        if (initializeGoogle()) {
+          clearInterval(interval)
+        }
+      }, 500)
+      return () => clearInterval(interval)
+    }
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -85,6 +129,21 @@ export default function Login() {
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
           </form>
+
+          {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+            <>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-[#1f1642] px-2 text-indigo-300">Ou se connecter avec</span>
+                </div>
+              </div>
+
+              <div id="google-signin-button" className="w-full flex justify-center"></div>
+            </>
+          )}
 
           <p className="text-indigo-300 text-sm text-center mt-6">
             Pas encore de compte ?{' '}

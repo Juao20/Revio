@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    RegisterView, LoginView, ProfileView,
+    RegisterView, GoogleLoginView, LoginView, ProfileView,
     CreateCheckoutView, LemonSqueezyWebhookView,
     NotificationListView, NotificationReadView, NotificationReadAllView,
     BugReportListCreateView, BugReportDetailView,
@@ -9,6 +9,8 @@ from .views import (
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
+    path('google/', GoogleLoginView.as_view(), name='google-login'),
+
     path('profile/', ProfileView.as_view(), name='profile'),
     path('checkout/', CreateCheckoutView.as_view(), name='checkout'),
     path('webhook/lemonsqueezy/', LemonSqueezyWebhookView.as_view(), name='webhook'),

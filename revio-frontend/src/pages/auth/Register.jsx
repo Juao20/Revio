@@ -1,15 +1,59 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { register } from '../../api/auth'
+import { register, googleLogin } from '../../api/auth'
 import useAuthStore from '../../stores/authStore'
 
 export default function Register() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((s) => s.setAuth)
-  const [form, setForm] = useState({ username: '', email: '', password: '' })
+  const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' })
   const [accepted, setAccepted] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const handleGoogleResponse = async (response) => {
+    const idToken = response.credential
+    setLoading(true)
+    setError('')
+    try {
+      const res = await googleLogin(idToken)
+      setAuth(res.data.user, res.data.token)
+      navigate('/onboarding')
+    } catch (err) {
+      setError(err.response?.data?.error || 'Échec de la connexion avec Google.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+    if (!clientId) return
+
+    const initializeGoogle = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleResponse,
+        })
+        window.google.accounts.id.renderButton(
+          document.getElementById('google-signup-button'),
+          { theme: 'outline', size: 'large', width: '100%', text: 'signup_with' }
+        )
+        return true
+      }
+      return false
+    }
+
+    if (!initializeGoogle()) {
+      const interval = setInterval(() => {
+        if (initializeGoogle()) {
+          clearInterval(interval)
+        }
+      }, 500)
+      return () => clearInterval(interval)
+    }
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -17,10 +61,16 @@ export default function Register() {
       setError('Tu dois accepter les conditions d\'utilisation pour continuer.')
       return
     }
+    if (form.password !== form.confirmPassword) {
+      setError('Les mots de passe ne correspondent pas.')
+      return
+    }
     setLoading(true)
     setError('')
     try {
-      const res = await register(form)
+      // Envoyer uniquement les champs attendus par le backend
+      const { username, email, password } = form
+      const res = await register({ username, email, password })
       setAuth(res.data.user, res.data.token)
       navigate('/onboarding')
     } catch (err) {
@@ -96,6 +146,20 @@ export default function Register() {
               />
             </div>
 
+            <div>
+              <label className="text-indigo-200 text-sm font-medium mb-1 block">
+                Confirmer le mot de passe
+              </label>
+              <input
+                type="password"
+                value={form.confirmPassword}
+                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                className="w-full bg-white/10 border border-white/20 text-white placeholder-indigo-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
             {/* Checkbox acceptation */}
             <div className="flex items-start gap-3 pt-1">
               <input
@@ -133,6 +197,29 @@ export default function Register() {
               {loading ? 'Inscription...' : 'Créer mon compte'}
             </button>
           </form>
+
+          {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+            <>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-[#1f1642] px-2 text-indigo-300">Ou s'inscrire avec</span>
+                </div>
+              </div>
+
+              <div className="relative w-full">
+                {!accepted && (
+                  <div
+                    className="absolute inset-0 z-10 cursor-pointer"
+                    onClick={() => setError("Tu dois accepter les conditions d'utilisation pour continuer.")}
+                  />
+                )}
+                <div id="google-signup-button" className="w-full flex justify-center"></div>
+              </div>
+            </>
+          )}
 
           <p className="text-indigo-300 text-sm text-center mt-6">
             Déjà un compte ?{' '}
