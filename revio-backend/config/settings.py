@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost').split(',') if h.strip()]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -90,17 +90,18 @@ REST_FRAMEWORK = {
 # Whitenoise pour les fichiers statiques
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
+def _split_origins(value, default):
+    raw = os.getenv(value)
+    if not raw:
+        return [default]
+    return [origin.strip().rstrip('/') for origin in raw.split(',') if origin.strip()]
+
 # CORS en production
-CORS_ALLOWED_ORIGINS = [
-    os.getenv('FRONTEND_URL', 'http://localhost:5173'),
-]
+CORS_ALLOWED_ORIGINS = _split_origins('FRONTEND_URL', 'http://localhost:5173')
 CORS_ALLOW_ALL_ORIGINS = False
 
 # CSRF en production
-CSRF_TRUSTED_ORIGINS = [
-    os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000'),
-    'https://revio.up.railway.app',
-]
+CSRF_TRUSTED_ORIGINS = _split_origins('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000')
 
 # Storage local (dev)
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
