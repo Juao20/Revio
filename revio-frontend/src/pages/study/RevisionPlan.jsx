@@ -1,8 +1,15 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { getRevisionPlan, createRevisionPlan } from '../../api/study'
-import { ArrowLeft, Calendar, Clock, Lightbulb } from 'lucide-react'
+import { Calendar, Clock, Lightbulb } from 'lucide-react'
+import { getErrorMessage } from '../../lib/errors'
+import PageHeader from '../../components/ui/PageHeader'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
+import Input from '../../components/ui/Input'
+import Alert from '../../components/ui/Alert'
+import Skeleton from '../../components/ui/Skeleton'
 
 export default function RevisionPlan() {
   const { id } = useParams()
@@ -21,63 +28,49 @@ export default function RevisionPlan() {
 
   const today = new Date().toISOString().split('T')[0]
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-950 via-indigo-900 to-slate-900 flex items-center justify-center">
-        <p className="text-indigo-300">Chargement...</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-950 via-indigo-900 to-slate-900">
+    <div>
+      <PageHeader title="Plan de révision" backTo={`/courses/${id}`} />
 
-      {/* Navbar */}
-      <nav className="border-b border-white/10 px-6 py-4 flex items-center gap-4">
-        <Link to={`/courses/${id}`} className="text-indigo-400 hover:text-white transition">
-          <ArrowLeft size={20} />
-        </Link>
-        <span className="text-white font-bold">Plan de révision</span>
-      </nav>
+      <div className="px-4 md:px-8 py-4 max-w-2xl mx-auto">
+        {isLoading && <Skeleton className="h-56" />}
 
-      <div className="max-w-2xl mx-auto px-6 py-8">
-
-        {/* Formulaire date examen */}
-        {!plan && (
-          <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-8 text-center">
-            <span className="text-5xl block mb-4">📅</span>
-            <h2 className="text-xl font-bold text-white mb-2">Quand est ton examen ?</h2>
-            <p className="text-indigo-300 text-sm mb-6">
-              L'IA va créer un plan de révision personnalisé jusqu'à ta date d'examen
+        {!isLoading && !plan && (
+          <Card className="p-8 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-accent/14 flex items-center justify-center mx-auto mb-4">
+              <Calendar size={26} className="text-accent" />
+            </div>
+            <h2 className="font-bold text-lg mb-1.5">Quand est ton examen ?</h2>
+            <p className="text-text-faint text-sm mb-6">
+              L'IA crée un plan de révision personnalisé jusqu'à ta date d'examen.
             </p>
 
-            <input
-              type="date"
-              value={examDate}
-              min={today}
-              onChange={(e) => setExamDate(e.target.value)}
-              className="w-full bg-white/10 border border-white/20 text-white rounded-xl px-4 py-3 mb-4 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
-            />
+            <Input type="date" value={examDate} min={today} onChange={(e) => setExamDate(e.target.value)} className="mb-4" />
 
-            <button
+            <Button
               onClick={() => createMutation.mutate()}
-              disabled={!examDate || createMutation.isPending}
-              className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-semibold rounded-xl py-4 transition shadow-lg shadow-violet-500/30"
+              disabled={!examDate}
+              loading={createMutation.isPending}
+              className="w-full"
+              size="lg"
             >
-              {createMutation.isPending ? '⏳ Génération en cours...' : '🚀 Générer mon plan'}
-            </button>
-          </div>
+              Générer mon plan
+            </Button>
+
+            {createMutation.isError && (
+              <Alert tone="danger" className="mt-4 text-left">
+                {getErrorMessage(createMutation.error, 'Impossible de générer ton plan. Réessaie.')}
+              </Alert>
+            )}
+          </Card>
         )}
 
-        {/* Plan généré */}
         {plan && (
           <div className="space-y-6">
-
-            {/* Header */}
-            <div className="bg-violet-500/20 border border-violet-500/30 rounded-2xl p-5 flex items-center justify-between">
+            <Card className="p-5 flex items-center justify-between">
               <div>
-                <p className="text-violet-300 text-sm font-medium">Date d'examen</p>
-                <p className="text-white font-bold text-lg">
+                <p className="text-text-faint text-xs font-semibold">Date d'examen</p>
+                <p className="font-bold">
                   {new Date(plan.exam_date).toLocaleDateString('fr-FR', {
                     weekday: 'long',
                     day: 'numeric',
@@ -86,83 +79,72 @@ export default function RevisionPlan() {
                   })}
                 </p>
               </div>
-              <Calendar size={32} className="text-violet-400" />
-            </div>
+              <Calendar size={28} className="text-accent" />
+            </Card>
 
-            {/* Jours du plan */}
             <div>
-              <h3 className="text-white font-semibold mb-4">
-                📋 Plan sur {plan.plan.total_days} jours
-              </h3>
+              <h3 className="font-bold text-sm mb-3">Plan sur {plan.plan.total_days} jours</h3>
               <div className="space-y-3">
                 {plan.plan.daily_plan?.map((day, i) => (
-                  <div
-                    key={i}
-                    className="bg-white/10 border border-white/20 rounded-2xl p-5"
-                  >
-                    {/* Header jour */}
+                  <Card key={i} className="p-5">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-violet-500/30 rounded-lg flex items-center justify-center">
-                          <span className="text-violet-300 text-sm font-bold">{day.day}</span>
+                        <div className="w-8 h-8 bg-accent/14 rounded-lg flex items-center justify-center shrink-0">
+                          <span className="text-accent text-sm font-bold">{day.day}</span>
                         </div>
                         <div>
-                          <p className="text-white font-medium text-sm">{day.focus}</p>
-                          <p className="text-indigo-400 text-xs">{day.date}</p>
+                          <p className="font-medium text-sm">{day.focus}</p>
+                          <p className="text-text-faint text-xs">{day.date}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 text-indigo-400">
-                        <Clock size={14} />
+                      <div className="flex items-center gap-1 text-text-faint shrink-0">
+                        <Clock size={13} />
                         <span className="text-xs">{day.duration_minutes} min</span>
                       </div>
                     </div>
 
-                    {/* Tâches */}
                     <ul className="space-y-2">
                       {day.tasks?.map((task, j) => (
                         <li key={j} className="flex items-start gap-2">
-                          <span className="w-1.5 h-1.5 bg-violet-400 rounded-full mt-2 shrink-0" />
-                          <p className="text-indigo-200 text-sm leading-relaxed">{task}</p>
+                          <span className="w-1.5 h-1.5 bg-accent rounded-full mt-2 shrink-0" />
+                          <p className="text-text-soft text-sm leading-relaxed">{task}</p>
                         </li>
                       ))}
                     </ul>
-                  </div>
+                  </Card>
                 ))}
               </div>
             </div>
 
-            {/* Conseils */}
-            {plan.plan.tips && plan.plan.tips.length > 0 && (
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-5">
-                <h3 className="text-yellow-300 font-semibold mb-3 flex items-center gap-2">
-                  <Lightbulb size={18} />
+            {plan.plan.tips?.length > 0 && (
+              <Card className="p-5 border-warning/20">
+                <h3 className="font-bold mb-3 flex items-center gap-2 text-sm">
+                  <Lightbulb size={16} className="text-warning" />
                   Conseils de révision
                 </h3>
                 <ul className="space-y-2">
                   {plan.plan.tips.map((tip, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="text-yellow-400 mt-0.5">•</span>
-                      <p className="text-yellow-200 text-sm leading-relaxed">{tip}</p>
+                      <span className="text-warning mt-0.5">•</span>
+                      <p className="text-text-soft text-sm leading-relaxed">{tip}</p>
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Card>
             )}
 
-            {/* Regénérer */}
-            <button
+            <Button
+              variant="secondary"
               onClick={() => {
                 setExamDate('')
                 refetch()
               }}
-              className="w-full bg-white/10 hover:bg-white/20 border border-white/20 text-indigo-300 hover:text-white rounded-xl py-3 text-sm transition"
+              className="w-full"
             >
               Changer la date d'examen
-            </button>
-
+            </Button>
           </div>
         )}
-
       </div>
     </div>
   )

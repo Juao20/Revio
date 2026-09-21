@@ -1,26 +1,38 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { uploadCourse } from '../api/courses'
-import { ArrowLeft, FileText, Upload as UploadIcon, Camera, AlertTriangle, X, Plus } from 'lucide-react'
+import { FileText, Upload as UploadIcon, Camera, AlertTriangle, X, Plus, File as FileIcon, CloudUpload } from 'lucide-react'
+import { getErrorMessage } from '../lib/errors'
+import PageHeader from '../components/ui/PageHeader'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
+import Alert from '../components/ui/Alert'
+import Tabs from '../components/ui/Tabs'
+import AIProgress from '../components/ui/AIProgress'
 
 const MODES = [
-  { key: 'text',  label: 'Texte',  icon: FileText,   desc: 'Copier-coller ton cours' },
-  { key: 'pdf',   label: 'PDF',    icon: UploadIcon, desc: 'Upload un fichier PDF' },
-  { key: 'image', label: 'Photo',  icon: Camera,     desc: 'Photo de tes notes' },
+  { key: 'text', label: 'Texte', icon: FileText },
+  { key: 'pdf', label: 'PDF', icon: UploadIcon },
+  { key: 'image', label: 'Photo', icon: Camera },
 ]
 
 const MAX_PHOTOS = 3
 
+const STEPS = {
+  text: ['Lecture du cours', 'Préparation des révisions'],
+  pdf: ['Lecture du PDF', 'Extraction du texte', 'Préparation des révisions'],
+  image: ['Analyse des photos', 'Extraction du texte', 'Préparation des révisions'],
+}
+
 export default function Upload() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ title: '', content: '' })
-  const [file, setFile] = useState(null)           // pour PDF
-  const [photos, setPhotos] = useState([])          // liste de photos { file, preview }
+  const [file, setFile] = useState(null)
+  const [photos, setPhotos] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [mode, setMode] = useState('text')
-
-  const maxPhotos = MAX_PHOTOS
 
   const handleFileChange = (e) => {
     const selected = e.target.files[0]
@@ -30,16 +42,13 @@ export default function Upload() {
 
   const handleAddPhoto = (e) => {
     const selected = e.target.files[0]
-    if (!selected) return
-    if (photos.length >= maxPhotos) return
+    if (!selected || photos.length >= MAX_PHOTOS) return
 
     const reader = new FileReader()
     reader.onload = (ev) => {
       setPhotos((prev) => [...prev, { file: selected, preview: ev.target.result }])
     }
     reader.readAsDataURL(selected)
-
-    // Reset l'input pour pouvoir re-sélectionner le même fichier
     e.target.value = ''
   }
 
@@ -62,18 +71,14 @@ export default function Upload() {
       } else if (mode === 'pdf' && file) {
         formData.append('file', file)
       } else if (mode === 'image') {
-        // Envoyer toutes les photos
-        photos.forEach((photo, i) => {
-          formData.append(`photo_${i}`, photo.file)
-        })
+        photos.forEach((photo, i) => formData.append(`photo_${i}`, photo.file))
         formData.append('photos_count', photos.length)
       }
 
       const res = await uploadCourse(formData)
       navigate(`/courses/${res.data.id}`)
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de l\'upload')
-    } finally {
+      setError(getErrorMessage(err, "Impossible d'importer ce cours. Vérifie le contenu et réessaie."))
       setLoading(false)
     }
   }
@@ -86,221 +91,163 @@ export default function Upload() {
     return false
   }
 
+  if (loading) {
+    return (
+      <div className="px-4 md:px-8 py-6 max-w-md mx-auto">
+        <Card className="p-8 flex flex-col items-center gap-6 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-accent/14 flex items-center justify-center">
+            <CloudUpload size={26} className="text-accent" />
+          </div>
+          <div>
+            <h2 className="font-bold">Revio prépare ton cours</h2>
+            <p className="text-text-faint text-sm mt-1">Ça prend quelques secondes.</p>
+          </div>
+          <div className="w-full text-left">
+            <AIProgress steps={STEPS[mode]} />
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-950 via-indigo-900 to-slate-900">
+    <div>
+      <PageHeader title="Nouveau cours" backTo="/" />
 
-      <nav className="border-b border-white/10 px-6 py-4 flex items-center gap-4">
-        <Link to="/" className="text-indigo-400 hover:text-white transition">
-          <ArrowLeft size={20} />
-        </Link>
-        <span className="text-white font-bold text-lg">Nouveau cours</span>
-      </nav>
+      <div className="px-4 md:px-8 py-4 max-w-2xl mx-auto space-y-6">
+        <Tabs
+          tabs={MODES.map((m) => ({ key: m.key, label: m.label, icon: m.icon }))}
+          active={mode}
+          onChange={(key) => {
+            setMode(key)
+            setFile(null)
+            setPhotos([])
+            setError('')
+          }}
+          className="w-full [&>button]:flex-1"
+        />
 
-      <div className="max-w-2xl mx-auto px-6 py-8">
-
-        {/* Toggle mode */}
-        <div className="flex bg-white/10 rounded-2xl p-1 mb-8 gap-1">
-          {MODES.map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() => {
-                setMode(key)
-                setFile(null)
-                setPhotos([])
-              }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition ${
-                mode === key
-                  ? 'bg-violet-600 text-white shadow'
-                  : 'text-indigo-300 hover:text-white'
-              }`}
-            >
-              <Icon size={15} />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Infos + Warning photo */}
         {mode === 'image' && (
-          <div className="space-y-3 mb-6">
-
-            {/* Limites */}
-            <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl px-5 py-4">
-              <p className="text-violet-300 font-semibold text-sm mb-3">📸 Photos par cours</p>
-              <div className="flex items-center gap-3 bg-white/5 rounded-xl p-3">
-                <span className="text-xl">✨</span>
-                <div>
-                  <p className="text-white font-semibold text-sm">Jusqu'à {MAX_PHOTOS} photos par cours</p>
-                  <p className="text-indigo-400 text-xs">Uploads illimités</p>
-                </div>
+          <div className="space-y-3">
+            <Card className="p-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-[10px] bg-accent/14 flex items-center justify-center shrink-0">
+                <Camera size={16} className="text-accent" />
               </div>
-            </div>
-
-            {/* Conseils qualité */}
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl px-5 py-4">
+              <p className="text-sm">
+                Jusqu'à <span className="font-bold">{MAX_PHOTOS} photos</span> par cours, uploads illimités.
+              </p>
+            </Card>
+            <Card className="p-4 border-warning/25">
               <div className="flex items-start gap-3">
-                <AlertTriangle size={18} className="text-yellow-400 shrink-0 mt-0.5" />
+                <AlertTriangle size={16} className="text-warning shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-yellow-300 font-semibold text-sm mb-2">
-                    Pour une analyse correcte :
-                  </p>
+                  <p className="text-sm font-semibold mb-2">Pour une analyse correcte</p>
                   <ul className="space-y-1">
                     {[
-                      'Prends la photo dans un endroit bien éclairé',
-                      'Cadre bien la page entière sans la couper',
-                      'Évite les reflets et les ombres sur le document',
-                      'Tiens ton téléphone stable et bien droit',
-                      'Assure-toi que le texte est net et lisible',
-                      'Une page à la fois pour un meilleur résultat',
-                    ].map((tip, i) => (
-                      <li key={i} className="text-yellow-200 text-xs flex items-center gap-2">
-                        <span className="w-1 h-1 bg-yellow-400 rounded-full shrink-0" />
+                      'Endroit bien éclairé',
+                      'Page entière cadrée, sans la couper',
+                      'Évite reflets et ombres',
+                      'Une page à la fois',
+                    ].map((tip) => (
+                      <li key={tip} className="text-text-faint text-xs flex items-center gap-2">
+                        <span className="w-1 h-1 bg-text-faint rounded-full shrink-0" />
                         {tip}
                       </li>
                     ))}
                   </ul>
                 </div>
               </div>
-            </div>
+            </Card>
           </div>
         )}
 
-        {error && (
-          <div className="bg-red-500/20 border border-red-500/30 text-red-300 rounded-xl px-4 py-3 mb-6 text-sm">
-            {error}
-          </div>
-        )}
+        {error && <Alert tone="danger">{error}</Alert>}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-
-          {/* Titre */}
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="text-indigo-200 text-sm font-medium mb-2 block">
-              Titre du cours
-            </label>
-            <input
-              type="text"
+            <label className="text-sm font-medium text-text-soft mb-2 block">Titre du cours</label>
+            <Input
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full bg-white/10 border border-white/20 text-white placeholder-indigo-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
-              placeholder="Ex: La photosynthèse, Les fonctions mathématiques..."
+              placeholder="Ex : La photosynthèse, Les fonctions dérivées..."
               required
             />
           </div>
 
-          {/* Contenu texte */}
           {mode === 'text' && (
             <div>
-              <label className="text-indigo-200 text-sm font-medium mb-2 block">
-                Contenu du cours
-              </label>
+              <label className="text-sm font-medium text-text-soft mb-2 block">Contenu du cours</label>
               <textarea
                 value={form.content}
                 onChange={(e) => setForm({ ...form, content: e.target.value })}
-                className="w-full bg-white/10 border border-white/20 text-white placeholder-indigo-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 transition resize-none"
                 placeholder="Colle ton cours ici..."
                 rows={12}
                 required
+                className="w-full bg-surface-2 border border-white/15 rounded-xl px-4 py-3 text-sm text-text placeholder-text-faint outline-none focus:border-accent focus:ring-2 focus:ring-accent/25 transition-colors resize-none"
               />
             </div>
           )}
 
-          {/* Upload PDF */}
           {mode === 'pdf' && (
             <div>
-              <label className="text-indigo-200 text-sm font-medium mb-2 block">
-                Fichier PDF
-              </label>
+              <label className="text-sm font-medium text-text-soft mb-2 block">Fichier PDF</label>
               <div
                 onClick={() => document.getElementById('pdf-input').click()}
-                className="w-full border-2 border-dashed border-white/20 hover:border-violet-500 rounded-xl p-10 text-center cursor-pointer transition"
+                className="w-full border-2 border-dashed border-white/15 hover:border-accent rounded-xl p-10 text-center cursor-pointer transition-colors"
               >
                 {file ? (
-                  <div>
-                    <span className="text-4xl block mb-2">📄</span>
-                    <p className="text-white font-medium">{file.name}</p>
-                    <p className="text-indigo-400 text-sm mt-1">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
+                  <div className="flex flex-col items-center gap-2">
+                    <FileIcon size={28} className="text-accent" />
+                    <p className="font-medium text-sm">{file.name}</p>
+                    <p className="text-text-faint text-xs">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                   </div>
                 ) : (
-                  <div>
-                    <span className="text-4xl block mb-2">☁️</span>
-                    <p className="text-indigo-300">Clique pour choisir un PDF</p>
-                    <p className="text-indigo-400 text-sm mt-1">Max 10MB</p>
+                  <div className="flex flex-col items-center gap-2">
+                    <CloudUpload size={28} className="text-text-faint" />
+                    <p className="text-text-soft text-sm">Clique pour choisir un PDF</p>
+                    <p className="text-text-faint text-xs">Max 10MB</p>
                   </div>
                 )}
               </div>
-              <input
-                id="pdf-input"
-                type="file"
-                accept=".pdf"
-                className="hidden"
-                onChange={handleFileChange}
-              />
+              <input id="pdf-input" type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
             </div>
           )}
 
-          {/* Upload Photos */}
           {mode === 'image' && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-indigo-200 text-sm font-medium">
-                  Photos du cours
-                </label>
-                <span className="text-indigo-400 text-xs">
-                  {photos.length}/{maxPhotos} photo{maxPhotos > 1 ? 's' : ''}
-                </span>
+                <label className="text-sm font-medium text-text-soft">Photos du cours</label>
+                <span className="text-text-faint text-xs">{photos.length}/{MAX_PHOTOS}</span>
               </div>
 
-              {/* Grille des photos ajoutées */}
               <div className="space-y-3">
                 {photos.map((photo, i) => (
-                  <div key={i} className="relative rounded-xl overflow-hidden border border-white/20">
-                    <img
-                      src={photo.preview}
-                      alt={`Page ${i + 1}`}
-                      className="w-full max-h-48 object-contain bg-black/20"
-                    />
-                    <div className="absolute top-0 left-0 right-0 bg-black/50 px-3 py-1.5 flex items-center justify-between">
-                      <span className="text-white text-xs font-medium">
-                        Page {i + 1} — {photo.file.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removePhoto(i)}
-                        className="text-red-400 hover:text-red-300 transition"
-                      >
+                  <div key={i} className="relative rounded-xl overflow-hidden border border-white/15">
+                    <img src={photo.preview} alt={`Page ${i + 1}`} className="w-full max-h-48 object-contain bg-black/30" />
+                    <div className="absolute top-0 left-0 right-0 bg-black/60 px-3 py-1.5 flex items-center justify-between">
+                      <span className="text-white text-xs font-medium">Page {i + 1} — {photo.file.name}</span>
+                      <button type="button" onClick={() => removePhoto(i)} aria-label="Supprimer la photo" className="text-danger hover:text-danger/80 transition-colors">
                         <X size={16} />
                       </button>
                     </div>
                   </div>
                 ))}
 
-                {/* Bouton ajouter photo */}
-                {photos.length < maxPhotos && (
+                {photos.length < MAX_PHOTOS && (
                   <div
                     onClick={() => document.getElementById('image-input').click()}
-                    className="w-full border-2 border-dashed border-white/20 hover:border-violet-500 rounded-xl p-8 text-center cursor-pointer transition"
+                    className="w-full border-2 border-dashed border-white/15 hover:border-accent rounded-xl p-8 text-center cursor-pointer transition-colors"
                   >
-                    <Plus size={24} className="text-indigo-400 mx-auto mb-2" />
-                    <p className="text-indigo-300 text-sm">
-                      {photos.length === 0
-                        ? 'Clique pour ajouter une photo'
-                        : `Ajouter une autre page (${photos.length}/${maxPhotos})`
-                      }
+                    <Plus size={22} className="text-text-faint mx-auto mb-2" />
+                    <p className="text-text-soft text-sm">
+                      {photos.length === 0 ? 'Clique pour ajouter une photo' : `Ajouter une autre page (${photos.length}/${MAX_PHOTOS})`}
                     </p>
-                    <p className="text-indigo-500 text-xs mt-1">JPG, PNG, WEBP — Max 10MB</p>
+                    <p className="text-text-faint text-xs mt-1">JPG, PNG, WEBP — Max 10MB</p>
                   </div>
                 )}
 
-                {/* Message max atteint */}
-                {photos.length >= maxPhotos && (
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
-                    <p className="text-indigo-400 text-xs">
-                      Maximum {MAX_PHOTOS} photos atteint pour ce cours.
-                    </p>
-                  </div>
+                {photos.length >= MAX_PHOTOS && (
+                  <p className="text-text-faint text-xs text-center">Maximum {MAX_PHOTOS} photos atteint pour ce cours.</p>
                 )}
               </div>
 
@@ -315,21 +262,11 @@ export default function Upload() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={!canSubmit()}
-            className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-4 transition shadow-lg shadow-violet-500/30"
-          >
-            {loading
-              ? mode === 'image'
-                ? `🔍 Analyse de ${photos.length} photo(s) en cours...`
-                : '⏳ Upload en cours...'
-              : mode === 'image' && photos.length > 0
-                ? `🚀 Uploader ${photos.length} photo(s) et générer avec l'IA`
-                : '🚀 Uploader et générer avec l\'IA'
-            }
-          </button>
-
+          <Button type="submit" disabled={!canSubmit()} className="w-full" size="lg">
+            {mode === 'image' && photos.length > 0
+              ? `Uploader ${photos.length} photo(s) et générer avec l'IA`
+              : "Uploader et générer avec l'IA"}
+          </Button>
         </form>
       </div>
     </div>

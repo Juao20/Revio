@@ -1,73 +1,57 @@
-import { useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getCourses } from '../api/courses'
 import { getProfile } from '../api/auth'
 import { getDueFlashcards, getHeatmap } from '../api/study'
-import useAuthStore from '../stores/authStore'
-import { BookOpen, Plus, Clock, Zap, LogOut, Flame, Star, Brain, User, Bug } from 'lucide-react'
-import NotificationBell from '../components/NotificationBell'
+import { BookOpen, Plus, Zap, Flame, Star, Brain, ArrowRight, Layers } from 'lucide-react'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
+import ProgressBar from '../components/ui/ProgressBar'
+import StatTile from '../components/ui/StatTile'
+import EmptyState from '../components/ui/EmptyState'
+import Alert from '../components/ui/Alert'
+import Skeleton, { SkeletonCard } from '../components/ui/Skeleton'
+import { getErrorMessage } from '../lib/errors'
 
-const LEVEL_COLORS = {
-  1: 'from-slate-400 to-slate-500',
-  2: 'from-blue-400 to-blue-600',
-  3: 'from-violet-400 to-violet-600',
-  4: 'from-yellow-400 to-orange-500',
+const LEVEL_FLOOR = { 1: 0, 2: 100, 3: 300, 4: 600 }
+
+function masteryTone(score) {
+  if (score >= 85) return 'success'
+  if (score >= 50) return 'accent'
+  return 'warning'
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate()
-  const { logout, setAuth } = useAuthStore()
-
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: () => getProfile().then((r) => r.data),
-    enabled: !!localStorage.getItem('token'), // ← ajoute ça
-    retry: false,
   })
 
-  const { data: courses = [], isLoading } = useQuery({
+  const { data: courses = [], isLoading: coursesLoading, isError: coursesError, error: coursesErr } = useQuery({
     queryKey: ['courses'],
     queryFn: () => getCourses().then((r) => r.data),
-    enabled: !!localStorage.getItem('token'), // ← ajoute ça
-    retry: false,
   })
 
   const { data: dueData } = useQuery({
     queryKey: ['due-flashcards'],
     queryFn: () => getDueFlashcards().then((r) => r.data),
-    enabled: !!localStorage.getItem('token'), // ← ajoute ça
-    retry: false,
   })
 
   const { data: heatmap = [] } = useQuery({
     queryKey: ['heatmap'],
     queryFn: () => getHeatmap().then((r) => r.data),
-    enabled: !!localStorage.getItem('token'), // ← ajoute ça
-    retry: false,
   })
 
-  useEffect(() => {
-    if (profile) setAuth(profile, localStorage.getItem('token'))
-  }, [profile])
-
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
-
   const level = profile?.level
-  const xpProgress = level?.next
-    ? Math.round(((profile?.xp % (level.next - (level.number === 1 ? 0 : [0,100,300,600][level.number - 1]))) / (level.next - (level.number === 1 ? 0 : [0,100,300,600][level.number - 1]))) * 100)
-    : 100
+  const floor = level ? LEVEL_FLOOR[level.number] : 0
+  const xpInLevel = profile ? profile.xp - floor : 0
+  const span = level?.next ? level.next - floor : 1
+  const xpPct = level?.next ? Math.round((xpInLevel / span) * 100) : 100
 
-  // Heatmap — 12 dernières semaines
-  const heatmapMap = {}
-  heatmap.forEach((a) => { heatmapMap[a.date] = a.sessions_count })
-
+  const heatmapMap = Object.fromEntries(heatmap.map((a) => [a.date, a.sessions_count]))
   const today = new Date()
   const weeks = []
-  for (let w = 11; w >= 0; w--) {
+  for (let w = 9; w >= 0; w--) {
     const week = []
     for (let d = 6; d >= 0; d--) {
       const date = new Date(today)
@@ -78,221 +62,143 @@ export default function Dashboard() {
     weeks.push(week)
   }
 
+  const nextCourse = courses[0]
+  const dueCount = dueData?.due_count || 0
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-950 via-indigo-900 to-slate-900">
+    <div className="px-4 md:px-8 py-6 max-w-5xl mx-auto space-y-7">
+      <div>
+        <h1 className="text-xl font-extrabold">
+          {profileLoading ? 'Salut !' : `Salut ${profile?.username} 👋`}
+        </h1>
+        <p className="text-sm text-text-faint mt-0.5">
+          {profile?.current_streak > 0
+            ? `Tu as révisé ${profile.current_streak} jour${profile.current_streak > 1 ? 's' : ''} de suite. Continue comme ça.`
+            : 'Prêt à réviser aujourd\'hui ?'}
+        </p>
+      </div>
 
-      {/* Navbar */}
-      <nav className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🎓</span>
-          <span className="text-white font-bold text-xl">Revio</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <NotificationBell />
-          <Link to="/profile" className="text-indigo-400 hover:text-white transition">
-            <User size={20} />
+      {coursesError && <Alert tone="danger">{getErrorMessage(coursesErr, 'Impossible de charger ton tableau de bord.')}</Alert>}
+
+      {/* Next action */}
+      {coursesLoading ? (
+        <Skeleton className="h-28" />
+      ) : nextCourse ? (
+        <Card className="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-accent/14 flex items-center justify-center shrink-0">
+              <Zap size={22} className="text-accent" />
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-accent uppercase tracking-wide mb-0.5">
+                Continue ta révision
+              </p>
+              <h2 className="font-bold">{nextCourse.title}</h2>
+              <p className="text-xs text-text-faint mt-0.5">
+                {dueCount > 0 ? `${dueCount} flashcard${dueCount > 1 ? 's' : ''} à revoir` : `Maîtrise ${nextCourse.mastery_score}%`}
+              </p>
+            </div>
+          </div>
+          <Link to={`/courses/${nextCourse.id}`}>
+            <Button icon={ArrowRight} iconPosition="right">Reprendre</Button>
           </Link>
-          <Link
-            to="/bug-report"
-            className="text-indigo-400 hover:text-white transition"
-            title="Signaler un bug"
-          >
-            <Bug size={18} />
-          </Link>
-          <button onClick={handleLogout} className="text-indigo-400 hover:text-white transition">
-            <LogOut size={18} />
-          </button>
-        </div>
-      </nav>
-
-      <div className="max-w-4xl mx-auto px-6 py-8">
-
-        {/* Header + Niveau */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white">
-              Bonjour, {profile?.username} 👋
-            </h1>
-            <p className="text-indigo-300 mt-1">Prêt à réviser aujourd'hui ?</p>
-          </div>
-          {level && (
-            <div className="text-right">
-              <span className={`text-xs font-bold px-3 py-1 rounded-full bg-gradient-to-r ${LEVEL_COLORS[level.number]} text-white`}>
-                Niv.{level.number} — {level.name}
-              </span>
-              <p className="text-indigo-400 text-xs mt-1">{profile?.xp} XP</p>
-            </div>
-          )}
-        </div>
-
-        {/* XP Progress bar */}
-        {level?.next && (
-          <div className="mb-6">
-            <div className="flex justify-between text-xs text-indigo-400 mb-1">
-              <span>Progression vers niveau {level.number + 1}</span>
-              <span>{xpProgress}%</span>
-            </div>
-            <div className="w-full bg-white/10 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-violet-500 to-indigo-500 h-2 rounded-full transition-all"
-                style={{ width: `${xpProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Stats cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Flame size={16} className="text-orange-400" />
-              <span className="text-indigo-300 text-xs">Streak</span>
-            </div>
-            <p className="text-2xl font-bold text-white">
-              {profile?.current_streak}
-              <span className="text-sm text-indigo-400 ml-1">jours</span>
-            </p>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Star size={16} className="text-yellow-400" />
-              <span className="text-indigo-300 text-xs">XP Total</span>
-            </div>
-            <p className="text-2xl font-bold text-white">{profile?.xp}</p>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <BookOpen size={16} className="text-violet-400" />
-              <span className="text-indigo-300 text-xs">Cours</span>
-            </div>
-            <p className="text-2xl font-bold text-white">{courses.length}</p>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Brain size={16} className="text-emerald-400" />
-              <span className="text-indigo-300 text-xs">À revoir</span>
-            </div>
-            <p className="text-2xl font-bold text-white">
-              {dueData?.due_count || 0}
-              <span className="text-sm text-indigo-400 ml-1">cartes</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Alerte cartes à revoir */}
-        {dueData?.due_count > 0 && (
-          <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl px-5 py-4 mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🃏</span>
-              <div>
-                <p className="text-orange-300 font-medium text-sm">
-                  {dueData.due_count} flashcard{dueData.due_count > 1 ? 's' : ''} à revoir aujourd'hui
-                </p>
-                <p className="text-orange-400 text-xs">Ne casse pas ta série !</p>
-              </div>
-            </div>
-            <Link
-              to="/"
-              className="bg-orange-500 hover:bg-orange-400 text-white text-xs font-semibold px-4 py-2 rounded-xl transition"
-            >
-              Réviser
+        </Card>
+      ) : (
+        <EmptyState
+          icon={BookOpen}
+          title="Importe ton premier cours"
+          description="Texte, PDF ou photo — Revio génère automatiquement résumé, flashcards et quiz."
+          action={
+            <Link to="/upload">
+              <Button icon={Plus}>Importer un cours</Button>
             </Link>
+          }
+        />
+      )}
+
+      {/* Level progress */}
+      {profile && (
+        <Card className="p-5">
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-2">
+              <Star size={14} className="text-accent" />
+              <span className="text-sm font-bold">
+                Niveau {level.number} · {level.name}
+              </span>
+            </div>
+            <span className="text-xs text-text-faint">
+              {profile.xp} XP{level.next ? ` / ${level.next} XP` : ''}
+            </span>
+          </div>
+          <ProgressBar value={xpPct} />
+        </Card>
+      )}
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatTile icon={Flame} iconColor="text-warning" label="Streak" value={`${profile?.current_streak ?? 0}j`} />
+        <StatTile icon={BookOpen} label="Cours actifs" value={courses.length} />
+        <StatTile icon={Brain} iconColor="text-success" label="À revoir" value={dueCount} hint="flashcards dues" />
+        <StatTile icon={Layers} iconColor="text-info" label="Record streak" value={`${profile?.longest_streak ?? 0}j`} />
+      </div>
+
+      {/* Courses grid */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold">Mes cours</h2>
+          {courses.length > 0 && (
+            <Link to="/courses" className="text-xs font-semibold text-accent hover:text-accent-hover">
+              Tout voir
+            </Link>
+          )}
+        </div>
+
+        {coursesLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}
           </div>
         )}
 
-        {/* Bouton upload */}
-        <Link
-          to="/upload"
-          className="flex items-center justify-center gap-3 w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl py-4 mb-8 transition shadow-lg shadow-violet-500/30"
-        >
-          <Plus size={20} />
-          Uploader un nouveau cours
-        </Link>
-
-        {/* Heatmap */}
-        <div className="bg-white/10 border border-white/20 rounded-2xl p-5 mb-8">
-          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <Zap size={16} className="text-violet-400" />
-            Activité de révision
-          </h3>
-          <div className="flex gap-1">
-            {weeks.map((week, wi) => (
-              <div key={wi} className="flex flex-col gap-1">
-                {week.map((day, di) => (
-                  <div
-                    key={di}
-                    title={`${day.date} — ${day.count} session(s)`}
-                    className={`w-3 h-3 rounded-sm ${
-                      day.count === 0
-                        ? 'bg-white/10'
-                        : day.count === 1
-                        ? 'bg-violet-700'
-                        : day.count === 2
-                        ? 'bg-violet-500'
-                        : 'bg-violet-400'
-                    }`}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center gap-2 mt-2">
-            <span className="text-indigo-400 text-xs">Moins</span>
-            <div className="w-3 h-3 rounded-sm bg-white/10" />
-            <div className="w-3 h-3 rounded-sm bg-violet-700" />
-            <div className="w-3 h-3 rounded-sm bg-violet-500" />
-            <div className="w-3 h-3 rounded-sm bg-violet-400" />
-            <span className="text-indigo-400 text-xs">Plus</span>
-          </div>
-        </div>
-
-        {/* Liste des cours */}
-        <div>
-          <h2 className="text-lg font-semibold text-white mb-4">Mes cours</h2>
-
-          {isLoading && (
-            <div className="text-center text-indigo-300 py-12">Chargement...</div>
-          )}
-
-          {!isLoading && courses.length === 0 && (
-            <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/10">
-              <span className="text-5xl mb-4 block">📚</span>
-              <p className="text-indigo-300">Aucun cours pour l'instant</p>
-              <p className="text-indigo-400 text-sm mt-1">Upload ton premier cours pour commencer !</p>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {courses.map((course) => (
-              <Link
-                key={course.id}
-                to={`/courses/${course.id}`}
-                className="flex items-center justify-between bg-white/10 hover:bg-white/15 backdrop-blur border border-white/20 rounded-2xl p-5 transition group"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 bg-violet-500/30 rounded-xl flex items-center justify-center">
-                    <BookOpen size={20} className="text-violet-300" />
+        {!coursesLoading && courses.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {courses.slice(0, 6).map((course) => (
+              <Link key={course.id} to={`/courses/${course.id}`}>
+                <Card className="p-4 h-full flex flex-col gap-3 hover:border-white/20 transition-colors">
+                  <div className="w-9 h-9 rounded-[10px] bg-accent/14 flex items-center justify-center">
+                    <BookOpen size={16} className="text-accent" />
                   </div>
-                  <div>
-                    <p className="text-white font-medium">{course.title}</p>
-                    <div className="flex items-center gap-1 mt-1">
-                      <Clock size={12} className="text-indigo-400" />
-                      <p className="text-indigo-400 text-xs">
-                        {new Date(course.created_at).toLocaleDateString('fr-FR')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <span className="text-indigo-400 group-hover:text-white transition text-xl">→</span>
+                  <h3 className="text-sm font-bold truncate">{course.title}</h3>
+                  <ProgressBar value={course.mastery_score} tone={masteryTone(course.mastery_score)} />
+                </Card>
               </Link>
             ))}
           </div>
-        </div>
-
+        )}
       </div>
+
+      {/* Activity */}
+      {heatmap.length > 0 && (
+        <div>
+          <h2 className="text-sm font-bold mb-3">Activité</h2>
+          <Card className="p-5">
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
+              {weeks.map((week, wi) => (
+                <div key={wi} className="flex flex-col gap-1.5">
+                  {week.map((day) => (
+                    <div
+                      key={day.date}
+                      title={`${day.date} — ${day.count} session(s)`}
+                      className={`w-3.5 h-3.5 rounded-[3px] ${
+                        day.count === 0 ? 'bg-surface-3' : day.count === 1 ? 'bg-accent/25' : day.count === 2 ? 'bg-accent/60' : 'bg-accent'
+                      }`}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

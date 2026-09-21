@@ -1,22 +1,24 @@
 import { Link } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Lock } from 'lucide-react'
 
 export default function Privacy() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-950 via-indigo-900 to-slate-900">
-      <nav className="border-b border-white/10 px-6 py-4 flex items-center gap-4">
-        <Link to="/register" className="text-indigo-400 hover:text-white transition">
-          <ArrowLeft size={20} />
+    <div className="min-h-screen bg-bg font-sans">
+      <nav className="border-b border-white/8 px-6 py-4 flex items-center gap-4">
+        <Link to="/register" aria-label="Retour" className="w-9 h-9 rounded-[10px] bg-surface-2 border border-white/10 flex items-center justify-center text-text-soft hover:text-text transition-colors">
+          <ArrowLeft size={16} />
         </Link>
-        <span className="text-white font-bold">Politique de confidentialité</span>
+        <span className="font-bold">Politique de confidentialité</span>
       </nav>
 
-      <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
 
         <div className="text-center">
-          <span className="text-4xl block mb-3">🔒</span>
-          <h1 className="text-3xl font-bold text-white">Politique de confidentialité</h1>
-          <p className="text-indigo-400 text-sm mt-2">Dernière mise à jour : juin 2026</p>
+          <div className="w-14 h-14 rounded-2xl bg-accent/14 flex items-center justify-center mx-auto mb-3">
+            <Lock size={26} className="text-accent" />
+          </div>
+          <h1 className="text-2xl font-extrabold">Politique de confidentialité</h1>
+          <p className="text-text-faint text-sm mt-2">Dernière mise à jour : juin 2026</p>
         </div>
 
         {[
@@ -30,7 +32,7 @@ export default function Privacy() {
           },
           {
             title: '3. Stockage et sécurité',
-            content: `Vos données sont stockées sur des serveurs sécurisés (Railway). Les mots de passe sont chiffrés avec l'algorithme bcrypt. Les fichiers PDF sont stockés de manière sécurisée sur Cloudinary. Nous utilisons HTTPS pour toutes les communications. Nous ne vendons jamais vos données à des tiers.`,
+            content: `Vos données sont stockées sur des serveurs sécurisés (Render). Les mots de passe sont chiffrés avec l'algorithme bcrypt. Les fichiers PDF sont stockés de manière sécurisée sur Cloudinary. Nous utilisons HTTPS pour toutes les communications. Nous ne vendons jamais vos données à des tiers.`,
           },
           {
             title: '4. Partage des données',
@@ -61,9 +63,9 @@ export default function Privacy() {
             content: `Pour toute question concernant la protection de vos données : privacy@revio.app`,
           },
         ].map((section, i) => (
-          <div key={i} className="bg-white/10 border border-white/20 rounded-2xl p-6">
-            <h2 className="text-white font-semibold text-lg mb-3">{section.title}</h2>
-            <p className="text-indigo-200 text-sm leading-relaxed">{section.content}</p>
+          <div key={i} className="bg-surface border border-white/8 rounded-2xl p-6">
+            <h2 className="font-bold text-base mb-2.5">{section.title}</h2>
+            <p className="text-text-soft text-sm leading-relaxed">{section.content}</p>
           </div>
         ))}
 

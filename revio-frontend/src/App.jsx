@@ -9,6 +9,8 @@ import Onboarding from './pages/Onboarding'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import Dashboard from './pages/Dashboard'
+import CoursesList from './pages/CoursesList'
+import Progress from './pages/Progress'
 import Upload from './pages/Upload'
 import CourseDetail from './pages/courses/CourseDetail'
 import Quiz from './pages/study/Quiz'
@@ -19,6 +21,7 @@ import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
 import BugReport from './pages/BugReport'
 import Notifications from './pages/Notifications'
+import AppShell from './components/layout/AppShell'
 
 const PrivateRoute = ({ children }) => {
   const token = useAuthStore((s) => s.token)
@@ -50,37 +53,39 @@ function AppContent() {
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
 
-      {/* Private */}
-      <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-      <Route path="/upload" element={<PrivateRoute><Upload /></PrivateRoute>} />
-      <Route path="/courses/:id" element={<PrivateRoute><CourseDetail /></PrivateRoute>} />
+      {/* Private — immersives, sans shell */}
       <Route path="/courses/:id/quiz" element={<PrivateRoute><Quiz /></PrivateRoute>} />
-      <Route path="/courses/:id/plan" element={<PrivateRoute><RevisionPlan /></PrivateRoute>} />
       <Route path="/courses/:id/exam" element={<PrivateRoute><Exam /></PrivateRoute>} />
-      <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-      <Route path="/bug-report" element={<PrivateRoute><BugReport /></PrivateRoute>} />
-      <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
+
+      {/* Private — dans l'app shell (sidebar / bottom nav) */}
+      <Route element={<PrivateRoute><AppShell /></PrivateRoute>}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/courses" element={<CoursesList />} />
+        <Route path="/progress" element={<Progress />} />
+        <Route path="/upload" element={<Upload />} />
+        <Route path="/courses/:id" element={<CourseDetail />} />
+        <Route path="/courses/:id/plan" element={<RevisionPlan />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/bug-report" element={<BugReport />} />
+        <Route path="/notifications" element={<Notifications />} />
+      </Route>
     </Routes>
   )
 }
 
 export default function App() {
-  const [showSplash, setShowSplash] = useState(false)
-  const [splashDone, setSplashDone] = useState(false)
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('revio_splash_seen'))
+  const [splashDone, setSplashDone] = useState(() => !!sessionStorage.getItem('revio_splash_seen'))
 
   useEffect(() => {
-    const seen = sessionStorage.getItem('revio_splash_seen')
-    if (!seen) {
-      setShowSplash(true)
-      sessionStorage.setItem('revio_splash_seen', 'true')
-      setTimeout(() => {
-        setShowSplash(false)
-        setSplashDone(true)
-      }, 2500)
-    } else {
+    if (!showSplash) return
+    sessionStorage.setItem('revio_splash_seen', 'true')
+    const timer = setTimeout(() => {
+      setShowSplash(false)
       setSplashDone(true)
-    }
-  }, [])
+    }, 2500)
+    return () => clearTimeout(timer)
+  }, [showSplash])
 
   if (showSplash) return <Splash />
   if (!splashDone) return null
