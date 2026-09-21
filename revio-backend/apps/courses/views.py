@@ -10,7 +10,7 @@ import PyPDF2
 import io
 
 ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-MAX_PHOTOS_PER_COURSE_PREMIUM = 3
+MAX_PHOTOS_PER_COURSE = 3
 
 class CourseListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -27,21 +27,6 @@ class CourseUploadView(APIView):
     def post(self, request):
         user = request.user
         upload_type = request.data.get('upload_type', 'text')
-
-        # Vérification limite photo
-        if upload_type == 'image':
-            if not user.can_upload_photo():
-                return Response(
-                    {'error': 'Limite atteinte. En gratuit tu as 1 photo/jour. Passe en Premium !'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-        else:
-            # Vérification limite upload classique
-            if not user.can_upload():
-                return Response(
-                    {'error': 'Limite journalière atteinte (2 uploads/jour). Passe en Premium !'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
 
         serializer = CourseUploadSerializer(data=request.data, context={'request': request})
         if not serializer.is_valid():
@@ -131,17 +116,11 @@ class CourseUploadView(APIView):
 
 
 class CourseAddPhotoView(APIView):
-    """Ajouter des photos supplémentaires à un cours existant — Premium uniquement"""
+    """Ajouter des photos supplémentaires à un cours existant"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
         user = request.user
-
-        if not user.is_premium:
-            return Response(
-                {'error': 'L\'ajout de photos à un cours existant est une fonctionnalité Premium.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
 
         try:
             course = Course.objects.get(pk=pk, user=user)
@@ -150,9 +129,9 @@ class CourseAddPhotoView(APIView):
 
         # Compter les photos déjà ajoutées à ce cours
         photos_count = course.photos_count
-        if photos_count >= MAX_PHOTOS_PER_COURSE_PREMIUM:
+        if photos_count >= MAX_PHOTOS_PER_COURSE:
             return Response(
-                {'error': f'Maximum {MAX_PHOTOS_PER_COURSE_PREMIUM} photos par cours en Premium.'},
+                {'error': f'Maximum {MAX_PHOTOS_PER_COURSE} photos par cours.'},
                 status=status.HTTP_403_FORBIDDEN
             )
 
@@ -187,9 +166,9 @@ class CourseAddPhotoView(APIView):
             course.save()
 
             return Response({
-                'message': f'Photo {photos_count + 1}/{MAX_PHOTOS_PER_COURSE_PREMIUM} ajoutée avec succès.',
+                'message': f'Photo {photos_count + 1}/{MAX_PHOTOS_PER_COURSE} ajoutée avec succès.',
                 'photos_count': course.photos_count,
-                'photos_remaining': MAX_PHOTOS_PER_COURSE_PREMIUM - course.photos_count,
+                'photos_remaining': MAX_PHOTOS_PER_COURSE - course.photos_count,
             })
         except Exception as e:
             return Response(

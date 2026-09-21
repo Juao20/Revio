@@ -32,7 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'is_premium',
+            'id', 'username', 'email',
             'daily_uploads_used', 'daily_ai_questions_used',
             'daily_photos_used',
             'current_streak', 'longest_streak',
@@ -43,10 +43,7 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.level
 
     def get_ai_questions_remaining(self, obj):
-        if obj.is_premium:
-            return -1  # illimité
-        used = obj.daily_ai_questions_used
-        return max(0, 7 - used)
+        return -1  # illimité
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:

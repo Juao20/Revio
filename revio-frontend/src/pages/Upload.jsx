@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { uploadCourse } from '../api/courses'
 import { ArrowLeft, FileText, Upload as UploadIcon, Camera, AlertTriangle, X, Plus } from 'lucide-react'
-import useAuthStore from '../stores/authStore'
 
 const MODES = [
   { key: 'text',  label: 'Texte',  icon: FileText,   desc: 'Copier-coller ton cours' },
@@ -10,9 +9,10 @@ const MODES = [
   { key: 'image', label: 'Photo',  icon: Camera,     desc: 'Photo de tes notes' },
 ]
 
+const MAX_PHOTOS = 3
+
 export default function Upload() {
   const navigate = useNavigate()
-  const { user } = useAuthStore()
   const [form, setForm] = useState({ title: '', content: '' })
   const [file, setFile] = useState(null)           // pour PDF
   const [photos, setPhotos] = useState([])          // liste de photos { file, preview }
@@ -20,7 +20,7 @@ export default function Upload() {
   const [error, setError] = useState('')
   const [mode, setMode] = useState('text')
 
-  const maxPhotos = user?.is_premium ? 3 : 1
+  const maxPhotos = MAX_PHOTOS
 
   const handleFileChange = (e) => {
     const selected = e.target.files[0]
@@ -127,36 +127,13 @@ export default function Upload() {
             {/* Limites */}
             <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl px-5 py-4">
               <p className="text-violet-300 font-semibold text-sm mb-3">📸 Photos par cours</p>
-              {user?.is_premium ? (
-                <div className="flex items-center gap-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
-                  <span className="text-xl">✨</span>
-                  <div>
-                    <p className="text-yellow-300 font-semibold text-sm">Tu es Premium !</p>
-                    <p className="text-yellow-400 text-xs">Jusqu'à 3 photos par cours — uploads illimités</p>
-                  </div>
+              <div className="flex items-center gap-3 bg-white/5 rounded-xl p-3">
+                <span className="text-xl">✨</span>
+                <div>
+                  <p className="text-white font-semibold text-sm">Jusqu'à {MAX_PHOTOS} photos par cours</p>
+                  <p className="text-indigo-400 text-xs">Uploads illimités</p>
                 </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white/5 rounded-xl p-3 text-center">
-                      <p className="text-white font-bold text-lg">1</p>
-                      <p className="text-indigo-400 text-xs">photo max gratuit</p>
-                      <p className="text-indigo-500 text-xs">1 upload/jour</p>
-                    </div>
-                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 text-center">
-                      <p className="text-yellow-300 font-bold text-lg">3</p>
-                      <p className="text-yellow-400 text-xs">photos max Premium</p>
-                      <p className="text-yellow-500 text-xs">uploads illimités</p>
-                    </div>
-                  </div>
-                  <Link
-                    to="/premium"
-                    className="block text-center text-violet-400 hover:text-violet-300 text-xs mt-3 underline"
-                  >
-                    Passer en Premium pour ajouter jusqu'à 3 photos →
-                  </Link>
-                </>
-              )}
+              </div>
             </div>
 
             {/* Conseils qualité */}
@@ -318,22 +295,10 @@ export default function Upload() {
                 )}
 
                 {/* Message max atteint */}
-                {photos.length >= maxPhotos && !user?.is_premium && (
-                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 text-center">
-                    <p className="text-yellow-300 text-xs">
-                      Maximum 1 photo en gratuit.{' '}
-                      <Link to="/premium" className="underline hover:text-yellow-200">
-                        Passe en Premium
-                      </Link>
-                      {' '}pour ajouter jusqu'à 3 photos.
-                    </p>
-                  </div>
-                )}
-
-                {photos.length >= maxPhotos && user?.is_premium && (
+                {photos.length >= maxPhotos && (
                   <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
                     <p className="text-indigo-400 text-xs">
-                      Maximum 3 photos atteint pour ce cours.
+                      Maximum {MAX_PHOTOS} photos atteint pour ce cours.
                     </p>
                   </div>
                 )}

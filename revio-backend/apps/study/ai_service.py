@@ -77,7 +77,7 @@ Cours :
     return json.loads(raw.strip())
 
 
-def generate_study_content(content: str, is_premium: bool) -> dict:
+def generate_study_content(content: str) -> dict:
     analysis = analyze_course(content)
 
     # Détecter les concepts d'abord
@@ -94,11 +94,6 @@ def generate_study_content(content: str, is_premium: bool) -> dict:
 
     flashcard_count = max(fc_min, min(raw_flashcards, fc_max))
     quiz_count = max(qz_min, min(raw_quiz, qz_max))
-
-    # Limiter pour les gratuits
-    if not is_premium:
-        flashcard_count = min(flashcard_count, 5)
-        quiz_count = min(quiz_count, 3)
 
     prompt = f"""
 Tu es un professeur expert. Analyse ce cours en profondeur et génère ce JSON :

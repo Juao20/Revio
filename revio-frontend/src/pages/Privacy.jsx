@@ -22,11 +22,11 @@ export default function Privacy() {
         {[
           {
             title: '1. Données collectées',
-            content: `Nous collectons les données suivantes : informations de compte (nom d'utilisateur, email, mot de passe chiffré), contenu uploadé (cours, fichiers PDF), données d'utilisation (sessions de quiz, scores, activité de révision), données de paiement (traitées exclusivement par LemonSqueezy — nous ne stockons aucune donnée bancaire).`,
+            content: `Nous collectons les données suivantes : informations de compte (nom d'utilisateur, email, mot de passe chiffré), contenu uploadé (cours, fichiers PDF), données d'utilisation (sessions de quiz, scores, activité de révision).`,
           },
           {
             title: '2. Utilisation des données',
-            content: `Vos données sont utilisées pour : fournir et améliorer le service Revio, générer vos outils de révision personnalisés via notre IA, suivre votre progression et calculer votre maîtrise, vous envoyer des notifications liées à votre compte (si activées), traiter vos paiements via LemonSqueezy.`,
+            content: `Vos données sont utilisées pour : fournir et améliorer le service Revio, générer vos outils de révision personnalisés via notre IA, suivre votre progression et calculer votre maîtrise, vous envoyer des notifications liées à votre compte (si activées).`,
           },
           {
             title: '3. Stockage et sécurité',
@@ -34,7 +34,7 @@ export default function Privacy() {
           },
           {
             title: '4. Partage des données',
-            content: `Nous partageons vos données uniquement avec : Groq (traitement IA de vos cours — données non conservées après traitement), LemonSqueezy (traitement des paiements Premium), Cloudinary (stockage des fichiers PDF uploadés). Aucun partage à des fins publicitaires.`,
+            content: `Nous partageons vos données uniquement avec : Groq (traitement IA de vos cours — données non conservées après traitement), Cloudinary (stockage des fichiers PDF uploadés). Aucun partage à des fins publicitaires.`,
           },
           {
             title: '5. Cookies',
@@ -46,7 +46,7 @@ export default function Privacy() {
           },
           {
             title: '7. Conservation des données',
-            content: `Vos données sont conservées tant que votre compte est actif. En cas de suppression de compte, vos données sont effacées dans un délai de 30 jours. Les données de paiement sont conservées par LemonSqueezy selon leur propre politique.`,
+            content: `Vos données sont conservées tant que votre compte est actif. En cas de suppression de compte, vos données sont effacées dans un délai de 30 jours.`,
           },
           {
             title: '8. Mineurs',

@@ -223,36 +223,3 @@ def email_exam_unlocked(user, course_title):
         html_content=get_base_html(content, "Examen débloqué"),
         text_content=f"Félicitations {user.username} ! L'examen final de '{course_title}' est débloqué sur https://revio.app"
     )
-
-
-def email_premium_active(user):
-    content = f"""
-    <h1 style="color:white;font-size:24px;margin:0 0 16px;">Bienvenue dans Premium ! ✨</h1>
-    <p style="color:rgba(165,180,252,1);font-size:16px;line-height:1.6;margin:0 0 24px;">
-      Merci {user.username} ! Ton abonnement Premium est maintenant actif. Toutes les fonctionnalités sont débloquées.
-    </p>
-
-    <div style="background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);border-radius:12px;padding:20px;margin-bottom:24px;">
-      <p style="color:#fbbf24;font-weight:600;margin:0 0 12px;">✨ Ce que tu as maintenant :</p>
-      <ul style="color:rgba(165,180,252,1);margin:0;padding-left:20px;line-height:2.2;">
-        <li>Uploads illimités</li>
-        <li>Flashcards illimitées (3 photos par cours)</li>
-        <li>Prof IA illimité</li>
-        <li>Mode examen simulé</li>
-        <li>Détection des points faibles</li>
-        <li>Historique complet</li>
-      </ul>
-    </div>
-
-    <div style="text-align:center;">
-      <a href="https://revio.app" style="background:linear-gradient(135deg,#d97706,#b45309);color:white;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:600;font-size:16px;display:inline-block;">
-        Explorer Premium →
-      </a>
-    </div>
-    """
-    send_email_notification(
-        user,
-        subject="✨ Ton abonnement Revio Premium est actif !",
-        html_content=get_base_html(content, "Premium activé"),
-        text_content=f"Merci {user.username} ! Ton abonnement Premium Revio est maintenant actif. Profite de toutes les fonctionnalités sur https://revio.app"
-    )

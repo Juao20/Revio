@@ -4,9 +4,6 @@ from django.db import models
 from django.utils import timezone
 
 class User(AbstractUser):
-    # Premium
-    is_premium = models.BooleanField(default=False)
-
     # Uploads
     daily_uploads_used = models.IntegerField(default=0)
     last_upload_date = models.DateField(null=True, blank=True)
@@ -31,19 +28,8 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
-    
-    # Photos
 
-    def can_upload_photo(self):
-        today = timezone.now().date()
-        if self.last_photo_date != today:
-            self.daily_photos_used = 0
-            self.last_photo_date = today
-            self.save()
-        if not self.is_premium:
-            return self.daily_photos_used < 1  # 1 photo/jour gratuit
-        return True  # illimité en premium
-
+    # --- Photos ---
     def increment_photo_upload(self):
         today = timezone.now().date()
         if self.last_photo_date != today:
@@ -52,28 +38,7 @@ class User(AbstractUser):
         self.daily_photos_used += 1
         self.save()
 
-    # --- Uploads ---
-    def can_upload(self):
-        today = timezone.now().date()
-        if self.last_upload_date != today:
-            self.daily_uploads_used = 0
-            self.last_upload_date = today
-            self.save()
-        if self.is_premium:
-            return True
-        return self.daily_uploads_used < 2
-
     # --- Prof IA ---
-    def can_ask_professor(self):
-        today = timezone.now().date()
-        if self.last_ai_question_date != today:
-            self.daily_ai_questions_used = 0
-            self.last_ai_question_date = today
-            self.save()
-        if self.is_premium:
-            return True
-        return self.daily_ai_questions_used < 7
-
     def increment_ai_questions(self):
         today = timezone.now().date()
         if self.last_ai_question_date != today:
@@ -115,9 +80,7 @@ class User(AbstractUser):
     
     @property
     def ai_questions_remaining(self):
-        if self.is_premium:
-            return -1
-        return max(0, 7 - self.daily_ai_questions_used)
+        return -1
     
 class Notification(models.Model):
     TYPE_CHOICES = [
@@ -127,7 +90,6 @@ class Notification(models.Model):
         ('level_up',         '⭐ Niveau supérieur'),
         ('exam_unlocked',    '🏆 Examen débloqué'),
         ('welcome',          '👋 Bienvenue'),
-        ('premium_active',   '✨ Premium activé'),
         ('weak_points',      '🎯 Points faibles détectés'),
     ]
 

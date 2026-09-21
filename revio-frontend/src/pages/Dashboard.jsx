@@ -88,11 +88,6 @@ export default function Dashboard() {
           <span className="text-white font-bold text-xl">Revio</span>
         </div>
         <div className="flex items-center gap-4">
-          {profile?.is_premium && (
-            <span className="bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 text-xs font-semibold px-3 py-1 rounded-full">
-              ✨ Premium
-            </span>
-          )}
           <NotificationBell />
           <Link to="/profile" className="text-indigo-400 hover:text-white transition">
             <User size={20} />

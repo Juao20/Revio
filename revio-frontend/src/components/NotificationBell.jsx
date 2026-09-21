@@ -11,7 +11,6 @@ const NOTIF_ICONS = {
   level_up:        '⭐',
   exam_unlocked:   '🏆',
   welcome:         '👋',
-  premium_active:  '✨',
   weak_points:     '🎯',
 }
 

@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getCourse, deleteCourse } from '../../api/courses'
 import { generateContent, getFlashcards, getQuizzes, reviewFlashcard, getWeakPoints, askProfessor } from '../../api/study'
 import { ArrowLeft, Zap, Brain, Trash2, Calendar, Send, Clock, Target, Trophy } from 'lucide-react'
-import useAuthStore from '../../stores/authStore'
 import { addPhotoToCourse } from '../../api/courses'
 
 const difficultyColor = {
@@ -24,7 +23,6 @@ export default function CourseDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { user } = useAuthStore()
 
   const [activeTab, setActiveTab] = useState('summary')
   const [flipped, setFlipped] = useState({})
@@ -53,7 +51,6 @@ export default function CourseDetail() {
   const { data: weakPoints } = useQuery({
     queryKey: ['weak-points', id],
     queryFn: () => getWeakPoints(id).then((r) => r.data),
-    enabled: !!user?.is_premium,
     retry: false,
   })
 
@@ -130,7 +127,7 @@ export default function CourseDetail() {
     { key: 'summary', label: '📋 Résumé' },
     { key: 'flashcards', label: `🃏 Flashcards (${flashcards.length})` },
     { key: 'professor', label: '🎓 Prof IA' },
-    ...(user?.is_premium ? [{ key: 'weakpoints', label: '🎯 Points faibles' }] : []),
+    { key: 'weakpoints', label: '🎯 Points faibles' },
   ]
 
   if (isLoading) {
@@ -212,26 +209,16 @@ export default function CourseDetail() {
             <span className="text-xs font-medium">Plan révision</span>
           </Link>
 
-          {user?.is_premium ? (
-            <Link
-              to={`/courses/${id}/exam`}
-              className="flex flex-col items-center gap-2 bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30 text-yellow-300 rounded-2xl py-4 transition"
-            >
-              <Trophy size={20} />
-              <span className="text-xs font-medium">Examen</span>
-              {course?.exam_unlocked && (
-                <span className="text-xs text-yellow-400">Final 🔓</span>
-              )}
-            </Link>
-          ) : (
-            <Link
-              to="/premium"
-              className="flex flex-col items-center gap-2 bg-white/5 border border-white/10 text-indigo-400 rounded-2xl py-4 transition hover:bg-white/10"
-            >
-              <Trophy size={20} />
-              <span className="text-xs font-medium">Examen 🔒</span>
-            </Link>
-          )}
+          <Link
+            to={`/courses/${id}/exam`}
+            className="flex flex-col items-center gap-2 bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30 text-yellow-300 rounded-2xl py-4 transition"
+          >
+            <Trophy size={20} />
+            <span className="text-xs font-medium">Examen</span>
+            {course?.exam_unlocked && (
+              <span className="text-xs text-yellow-400">Final 🔓</span>
+            )}
+          </Link>
         </div>
         {/* Temps de maîtrise estimé */}
         {generatedData?.estimated_mastery_time && (
@@ -476,16 +463,10 @@ export default function CourseDetail() {
               </button>
             </div>
 
-            {/* Compteur questions restantes */}
-            {!user?.is_premium && (
-              <p className="text-indigo-500 text-xs text-center mt-2">
-                {user?.ai_questions_remaining} question(s) restante(s) aujourd'hui
-              </p>
-            )}
           </div>
         )}
 
-        {/* Tab — Points faibles (Premium) */}
+        {/* Tab — Points faibles */}
         {activeTab === 'weakpoints' && (
           <div className="space-y-4">
             {!weakPoints || (weakPoints.weak_points.length === 0 && weakPoints.strong_points.length === 0) ? (

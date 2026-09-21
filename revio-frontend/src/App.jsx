@@ -15,8 +15,6 @@ import Quiz from './pages/study/Quiz'
 import RevisionPlan from './pages/study/RevisionPlan'
 import Exam from './pages/study/Exam'
 import Profile from './pages/Profile'
-import Premium from './pages/Premium'
-import PremiumSuccess from './pages/PremiumSuccess'
 import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
 import BugReport from './pages/BugReport'
@@ -60,8 +58,6 @@ function AppContent() {
       <Route path="/courses/:id/plan" element={<PrivateRoute><RevisionPlan /></PrivateRoute>} />
       <Route path="/courses/:id/exam" element={<PrivateRoute><Exam /></PrivateRoute>} />
       <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-      <Route path="/premium" element={<PrivateRoute><Premium /></PrivateRoute>} />
-      <Route path="/premium/success" element={<PrivateRoute><PremiumSuccess /></PrivateRoute>} />
       <Route path="/bug-report" element={<PrivateRoute><BugReport /></PrivateRoute>} />
       <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
     </Routes>

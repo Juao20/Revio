@@ -4,23 +4,15 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate, get_user_model
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.http import HttpResponse
-import json
 import os
 import requests
 import secrets
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, BugReportSerializer
-from .lemonsqueezy import create_checkout, MONTHLY_VARIANT_ID, YEARLY_VARIANT_ID
-from .webhook import verify_webhook
 from .models import Notification, BugReport
 from .serializers import NotificationSerializer
 from .notifications import notify_welcome
 
 User = get_user_model()
-
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -130,75 +122,6 @@ class ProfileView(APIView):
     def get(self, request):
         return Response(UserSerializer(request.user).data)
 
-
-class CreateCheckoutView(APIView):
-    """Crée un checkout LemonSqueezy"""
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        plan = request.data.get('plan')  # 'monthly' ou 'yearly'
-
-        if plan == 'monthly':
-            variant_id = MONTHLY_VARIANT_ID
-        elif plan == 'yearly':
-            variant_id = YEARLY_VARIANT_ID
-        else:
-            return Response(
-                {'error': 'Plan invalide'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            checkout_url = create_checkout(
-                variant_id=variant_id,
-                email=request.user.email,
-                user_id=request.user.id,
-                redirect_url=f'{FRONTEND_URL}/premium/success',
-            )
-            return Response({'checkout_url': checkout_url})
-        except Exception as e:
-            return Response(
-                {'error': f'Erreur création checkout : {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-@method_decorator(csrf_exempt, name='dispatch')
-class LemonSqueezyWebhookView(APIView):
-    """Reçoit les webhooks LemonSqueezy"""
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        signature = request.headers.get('X-Signature', '')
-        payload = request.body
-
-        if not verify_webhook(payload, signature):
-            return HttpResponse(status=400)
-
-        data = json.loads(payload)
-        event = data.get('meta', {}).get('event_name', '')
-        custom_data = data.get('meta', {}).get('custom_data', {})
-        user_id = custom_data.get('user_id')
-
-        if not user_id:
-            return HttpResponse(status=200)
-
-        try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return HttpResponse(status=200)
-
-        # Activer Premium
-        if event in ['subscription_created', 'subscription_resumed', 'order_created']:
-            user.is_premium = True
-            user.save()
-
-        # Désactiver Premium
-        elif event in ['subscription_cancelled', 'subscription_expired', 'subscription_paused']:
-            user.is_premium = False
-            user.save()
-
-        return HttpResponse(status=200)
 
 class NotificationListView(APIView):
     """Liste des notifications"""

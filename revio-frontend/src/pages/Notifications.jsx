@@ -10,7 +10,6 @@ const NOTIF_ICONS = {
   level_up:        '⭐',
   exam_unlocked:   '🏆',
   welcome:         '👋',
-  premium_active:  '✨',
   weak_points:     '🎯',
 }
 
@@ -21,7 +20,6 @@ const NOTIF_COLORS = {
   level_up:        'border-yellow-500/20 bg-yellow-500/5',
   exam_unlocked:   'border-yellow-500/20 bg-yellow-500/5',
   welcome:         'border-violet-500/20 bg-violet-500/5',
-  premium_active:  'border-yellow-500/20 bg-yellow-500/5',
   weak_points:     'border-red-500/20 bg-red-500/5',
 }
 

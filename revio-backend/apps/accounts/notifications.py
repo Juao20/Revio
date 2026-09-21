@@ -76,15 +76,6 @@ def notify_exam_unlocked(user, course_title):
     )
 
 
-def notify_premium_active(user):
-    create_notification(
-        user,
-        'premium_active',
-        'Premium activé ! ✨',
-        'Toutes les fonctionnalités Premium sont maintenant disponibles. Bonne révision !'
-    )
-
-
 def notify_weak_points(user, course_title, weak_topics):
     topics_str = ', '.join([t['topic'] for t in weak_topics[:3]])
     create_notification(

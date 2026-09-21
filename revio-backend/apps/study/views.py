@@ -16,7 +16,6 @@ from apps.accounts.notifications import (
     notify_level_up,
     notify_exam_unlocked,
     notify_weak_points,
-    notify_premium_active,
 )
 import random
 from .ai_service import generate_study_content, ask_professor, generate_revision_plan, generate_exam_questions
@@ -53,7 +52,7 @@ class GenerateStudyContentView(APIView):
             return Response({'error': 'Ce cours n\'a pas de contenu'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            data = generate_study_content(course.content, request.user.is_premium)
+            data = generate_study_content(course.content)
         except Exception as e:
             return Response({'error': f'Erreur IA : {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -198,16 +197,10 @@ class SubmitQuizAnswerView(APIView):
 
 
 class WeakPointsView(APIView):
-    """Détecte les points faibles par topic — Premium"""
+    """Détecte les points faibles par topic"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, course_id):
-        if not request.user.is_premium:
-            return Response(
-                {'error': 'Fonctionnalité Premium'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
         try:
             course = Course.objects.get(pk=course_id, user=request.user)
         except Course.DoesNotExist:
@@ -278,12 +271,6 @@ class AskProfessorView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, course_id):
-        if not request.user.can_ask_professor():
-            return Response(
-                {'error': 'Limite de 7 questions/jour atteinte. Passe en Premium pour des questions illimitées !'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
         try:
             course = Course.objects.get(pk=course_id, user=request.user)
         except Course.DoesNotExist:
@@ -303,7 +290,7 @@ class AskProfessorView(APIView):
 
         return Response({
             'answer': answer,
-            'questions_remaining': request.user.ai_questions_remaining if not request.user.is_premium else -1
+            'questions_remaining': -1
         })
 
 class RevisionPlanView(APIView):
@@ -381,12 +368,6 @@ class ExamStartView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, course_id):
-        if not request.user.is_premium:
-            return Response(
-                {'error': 'Le mode examen est une fonctionnalité Premium'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
         try:
             course = Course.objects.get(pk=course_id, user=request.user)
         except Course.DoesNotExist:
@@ -514,15 +495,10 @@ class ExamSubmitView(APIView):
         })
 
 class ExamHistoryView(APIView):
-    """Historique des examens — Premium"""
+    """Historique des examens"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, course_id):
-        if not request.user.is_premium:
-            return Response(
-                {'error': 'Fonctionnalité Premium'},
-                status=status.HTTP_403_FORBIDDEN
-            )
         exams = ExamSession.objects.filter(
             user=request.user,
             course__id=course_id,
