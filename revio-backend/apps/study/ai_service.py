@@ -304,7 +304,7 @@ def extract_text_from_image(image_data: bytes, media_type: str) -> str:
     base64_image = base64.b64encode(image_data).decode('utf-8')
 
     response = client.chat.completions.create(
-        model="meta-llama/llama-4-scout-17b-16e-instruct",
+        model="qwen/qwen3.8-27b",
         messages=[
             {
                 "role": "user",
