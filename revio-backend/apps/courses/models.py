@@ -32,15 +32,10 @@ class Course(models.Model):
     def update_mastery(self):
         """Calcule la maîtrise basée sur les sessions et flashcards"""
         from apps.study.models import StudySession, Flashcard
-        from django.db.models import Avg
 
         sessions = StudySession.objects.filter(course=self)
         if not sessions.exists():
             return
-
-        avg_score = sessions.aggregate(
-            avg=Avg('score')
-        )['avg'] or 0
 
         total_questions = sessions.aggregate(
             total=models.Sum('total_questions')

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { getQuizzes, saveSession } from '../../api/study'
+import { getQuizzes, saveSession, submitQuizAnswer } from '../../api/study'
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react'
 
 export default function Quiz() {
@@ -21,12 +21,17 @@ export default function Quiz() {
     mutationFn: saveSession,
   })
 
+  const answerMutation = useMutation({
+    mutationFn: ({ quizId, option }) => submitQuizAnswer(id, quizId, option),
+  })
+
   const currentQuiz = quizzes[current]
   const isCorrect = selected === currentQuiz?.correct_answer
 
   const handleSelect = (option) => {
     if (selected) return // déjà répondu
     setSelected(option)
+    answerMutation.mutate({ quizId: currentQuiz.id, option })
   }
 
   const handleNext = () => {

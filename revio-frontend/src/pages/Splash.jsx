@@ -1,16 +1,4 @@
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-
 export default function Splash() {
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      navigate('/login')
-    }, 2500)
-    return () => clearTimeout(timer)
-  }, [])
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-950 via-indigo-900 to-slate-900 flex items-center justify-center">
       <div className="text-center animate-fade-in">

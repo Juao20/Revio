@@ -36,6 +36,16 @@ export default function Exam() {
   const [showCorrection, setShowCorrection] = useState(false)
   const timerRef = useRef(null)
   const submittedRef = useRef(false)
+  const answersRef = useRef(answers)
+  const examDataRef = useRef(examData)
+
+  useEffect(() => {
+    answersRef.current = answers
+  }, [answers])
+
+  useEffect(() => {
+    examDataRef.current = examData
+  }, [examData])
 
   useEffect(() => {
     if (phase !== 'exam') return
@@ -82,9 +92,11 @@ export default function Exam() {
     clearInterval(timerRef.current)
 
     // Les questions viennent directement de l'IA (pas de quiz_id)
-    const formattedAnswers = examData.questions.map((q, i) => ({
+    const currentExamData = examDataRef.current
+    const currentAnswers = answersRef.current
+    const formattedAnswers = currentExamData.questions.map((q, i) => ({
       question: q.question,
-      selected_answer: answers[i] || '',
+      selected_answer: currentAnswers[i] || '',
       correct_answer: q.correct_answer,
       explanation: q.explanation || '',
       topic: q.topic || '',
@@ -93,7 +105,7 @@ export default function Exam() {
 
     submitMutation.mutate({
       formattedAnswers,
-      time: auto ? examData.duration_seconds : timeUsed,
+      time: auto ? currentExamData.duration_seconds : timeUsed,
     })
   }
 

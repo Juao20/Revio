@@ -55,7 +55,18 @@ class CourseUploadView(APIView):
 
         # Extraction image
         elif upload_type == 'image':
-            photos_count = int(request.data.get('photos_count', 1))
+            try:
+                photos_count = int(request.data.get('photos_count', 1))
+            except (TypeError, ValueError):
+                return Response(
+                    {'error': 'photos_count invalide.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if photos_count > MAX_PHOTOS_PER_COURSE:
+                return Response(
+                    {'error': f'Maximum {MAX_PHOTOS_PER_COURSE} photos par cours.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             extracted_contents = []
 
             for i in range(photos_count):

@@ -103,6 +103,7 @@ class GenerateStudyContentView(APIView):
             'quizzes': QuizSerializer(quizzes, many=True).data,
             'summary': data.get('summary', []),
             'key_concepts': data.get('key_concepts', []),
+            'estimated_mastery_time': course.estimated_mastery_time,
         }, status=status.HTTP_201_CREATED)
 
 
@@ -136,7 +137,7 @@ class FlashcardReviewView(APIView):
             return Response({'error': 'Introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
         quality = request.data.get('quality', 0)  # 0-5
-        if not isinstance(quality, int) or quality < 0 or quality > 5:
+        if not isinstance(quality, int) or isinstance(quality, bool) or quality < 0 or quality > 5:
             return Response({'error': 'Quality doit être entre 0 et 5'}, status=status.HTTP_400_BAD_REQUEST)
 
         flashcard.update_review(quality)
@@ -244,6 +245,10 @@ class StudySessionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        course_id = request.data.get('course')
+        if not Course.objects.filter(pk=course_id, user=request.user).exists():
+            return Response({'error': 'Cours introuvable'}, status=status.HTTP_404_NOT_FOUND)
+
         serializer = StudySessionSerializer(data=request.data)
         if serializer.is_valid():
             session = serializer.save(user=request.user)
@@ -473,7 +478,7 @@ class ExamSubmitView(APIView):
         exam.course.update_mastery()
 
         # Notifier si examen final débloqué
-        if exam.course.exam_unlocked and difficulty != 'final':
+        if exam.course.exam_unlocked and exam.difficulty != 'final':
             notify_exam_unlocked(request.user, exam.course.title)
 
         # XP selon score
